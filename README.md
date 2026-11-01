@@ -4,7 +4,9 @@
 [![Python Version](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.66-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
 [![NLP Engine](https://img.shields.io/badge/NLP-TextBlob%20%2B%20VADER-blueviolet)](#8-nlp-methodology--algorithms)
-[![Tests](https://img.shields.io/badge/Pytest-41%20Passed-10B981?logo=pytest&logoColor=white)](#10-automated-testing-suite)
+[![Tests](https://img.shields.io/badge/Pytest-44%20Passed-10B981?logo=pytest&logoColor=white)](#10-automated-testing-suite)
+[![Docker](https://img.shields.io/badge/Docker-Compose%20Ready-2496ED?logo=docker&logoColor=white)](#14-production-deployment-docker-compose--nginx)
+[![CLI](https://img.shields.io/badge/CLI-Headless%20Batch-FFB000)](#11-headless-cli-batch-runner)
 [![License](https://img.shields.io/badge/License-MIT-6366F1)](#credits--license)
 
 ---
@@ -257,7 +259,24 @@ pytest -v
 
 ---
 
-## 11. Security, Privacy & Reliability
+## 11. Headless CLI Batch Runner
+
+ReviewSense provides a standalone command-line interface (`cli.py`) for automated batch pipelines, cron tasks, and CI workflows without running a browser:
+
+```bash
+# Basic batch evaluation
+python cli.py --input sample_data/sample_reviews.csv --output enriched_reviews.csv
+
+# Batch evaluation with Executive HTML Report generation
+python cli.py --input sample_data/sample_reviews.csv --output enriched_reviews.csv --report executive_summary.html
+
+# Specifying custom review text column header
+python cli.py -i user_data.csv -o scored.csv -t feedback -r report.html
+```
+
+---
+
+## 12. Security, Privacy & Reliability
 
 1. **CSV Formula Injection Mitigation (OWASP CSV Injection)**:
    Any string starting with dangerous spreadsheet formula triggers (`=`, `+`, `-`, `@`, `\t`, `\r`) is prepended with a single apostrophe (`'`) upon export, neutralizing malicious code execution in Excel or Google Sheets while preserving legitimate numeric scores.
@@ -282,23 +301,42 @@ pytest -v
 
 ---
 
-## 13. Docker Deployment
+## 14. Production Deployment: Docker Compose & Nginx
 
-Build and run ReviewSense in an isolated, secure container:
+For high-availability enterprise environments, ReviewSense includes a production-grade multi-container topology using Docker Compose and an Nginx reverse proxy gateway:
 
 ```bash
-# Build Docker image
-docker build -t reviewsense:2.0.0 .
+# Start ReviewSense and Nginx Gateway in detached mode
+docker compose up -d --build
 
-# Run container on port 8501
-docker run -d -p 8501:8501 --name reviewsense_app reviewsense:2.0.0
+# Verify container health and logs
+docker compose ps
+docker compose logs -f reviewsense_app
 ```
 
-Access the application at `http://localhost:8501`.
+### Production Gateway Features:
+- **Rate Limiting**: Throttles incoming connections to 20 requests/second per IP to guard against denial of service.
+- **WebSocket & SSE Passthrough**: Configured for continuous bidirectional Streamlit session states.
+- **Security Headers**: Injects `X-Frame-Options`, `X-Content-Type-Options: nosniff`, and `X-XSS-Protection`.
+- **Resource Constraints**: Capped at 2 CPUs and 2GB RAM to prevent container starvation.
 
 ---
 
-## 14. Academic Credits & Acknowledgments
+## 15. Environment Variables Configuration
+
+ReviewSense strictly follows 12-Factor application principles, allowing full operational configuration via environment variables:
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `REVIEWSENSE_ENV` | `production` | Deployment environment (`development`, `staging`, `production`) |
+| `REVIEWSENSE_MAX_FILE_SIZE_MB` | `25` | Enforced maximum file upload size boundary |
+| `REVIEWSENSE_LOG_LEVEL` | `INFO` | Logging threshold (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
+| `REVIEWSENSE_TB_POS_MIN` | `0.05` | TextBlob positive classification threshold |
+| `REVIEWSENSE_TB_NEG_MAX` | `-0.05` | TextBlob negative classification threshold |
+
+---
+
+## 16. Academic Credits & Acknowledgments
 
 - **Lead Development**: ReviewSense Engineering Team
 - **NLP Libraries**: [TextBlob](https://textblob.readthedocs.io/), [NLTK VADER](https://www.nltk.org/)

@@ -296,6 +296,16 @@ def render_sidebar():
                 st.session_state["ui_accent_theme"] = chosen_accent
                 st.rerun()
 
+        # System Diagnostics & Observability Telemetry
+        with st.expander("⚙️ System Telemetry & Health"):
+            from src.logger import get_system_telemetry
+            diag = get_system_telemetry()
+            st.caption(f"🐍 Python Runtime: **{diag.get('python_version')}**")
+            st.caption(f"💾 Memory Footprint: **{diag.get('memory_rss_mb')} MB**")
+            st.caption(f"💻 Architecture: **{diag.get('architecture')}**")
+            st.caption(f"⚡ Environment: **{AppConfig.ENVIRONMENT.upper()}**")
+            st.caption("🔒 Privacy: Local Zero-Exfiltration")
+
         st.markdown("---")
         st.markdown(
             "<div style='font-size: 0.72rem; color: #64748B; text-align: center; line-height: 1.5;'>"

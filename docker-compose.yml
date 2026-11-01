@@ -1,0 +1,50 @@
+version: "3.8"
+
+services:
+  reviewsense_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: reviewsense_app
+    restart: unless-stopped
+    environment:
+      - REVIEWSENSE_ENV=production
+      - REVIEWSENSE_MAX_FILE_SIZE_MB=25
+      - REVIEWSENSE_LOG_LEVEL=INFO
+      - PYTHONUNBUFFERED=1
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2048M
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    expose:
+      - "8501"
+    networks:
+      - reviewsense_net
+
+  nginx_gateway:
+    image: nginx:alpine
+    container_name: reviewsense_gateway
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      reviewsense_app:
+        condition: service_healthy
+    networks:
+      - reviewsense_net
+
+networks:
+  reviewsense_net:
+    driver: bridge

@@ -5,6 +5,7 @@ batch NLP execution, session-state synchronization, and injection-safe exports.
 """
 
 import io
+import gc
 import time
 import datetime
 from pathlib import Path
@@ -19,6 +20,7 @@ from src.config import (
 )
 from src.nlp_engine import default_nlp_engine, NLPEngine
 from src.preprocessing import clean_html, normalize_whitespace
+from src.logger import logger, log_execution_time
 
 
 def sanitize_for_csv_injection(val: Any) -> Any:
@@ -95,9 +97,11 @@ class DataManager:
             "date_column": None,
         }
 
-        # Match text column
+        # Match text column (ignoring explicit ID columns like 'review_id')
         for cand in AppConfig.TEXT_COLUMN_CANDIDATES:
             for col_l, orig_col in cols_lower.items():
+                if col_l.endswith("_id") or col_l == "id" or col_l.endswith("id"):
+                    continue
                 if cand in col_l:
                     candidates["text_column"] = orig_col
                     break
@@ -217,20 +221,33 @@ class DataManager:
             processed_df["vader_sentiment"] = vader_sentiments
             processed_df["analyzer_agreement"] = agreements
 
+        logger.info(f"Batch processed {total_rows} reviews successfully.")
+        gc.collect()
+
         return processed_df
 
     @classmethod
     def load_demonstration_data(cls) -> Tuple[Optional[pd.DataFrame], Dict[str, Any]]:
         """
         Loads the bundled sample dataset from disk, executes NLP analysis,
-        and returns the active dataframe and metadata.
+        and returns the active dataframe and metadata with memory caching.
         """
         csv_path = SAMPLE_REVIEWS_CSV
         if not csv_path.exists():
             raise FileNotFoundError(f"Bundled demonstration dataset not found at: {csv_path}")
 
-        raw_df = pd.read_csv(csv_path)
-        analyzed_df = cls.process_dataframe(raw_df, text_column="review_text")
+        try:
+            # Check if streamlit cache is available in current execution context
+            @st.cache_data(show_spinner=False)
+            def _get_cached_demo_df():
+                raw_df = pd.read_csv(csv_path)
+                return cls.process_dataframe(raw_df, text_column="review_text")
+            
+            analyzed_df = _get_cached_demo_df().copy()
+        except Exception:
+            # Fallback for headless CLI or tests where Streamlit context is absent
+            raw_df = pd.read_csv(csv_path)
+            analyzed_df = cls.process_dataframe(raw_df, text_column="review_text")
 
         metadata = {
             "dataset_id": "demo_sample_dataset",

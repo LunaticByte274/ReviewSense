@@ -1,8 +1,10 @@
 """
 ReviewSense - Central Application Configuration
-Defines default thresholds, file limits, design tokens, and project paths.
+Defines default thresholds, file limits, design tokens, and project paths
+with full 12-factor environment variable override support for production.
 """
 
+import os
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Dict, Any
@@ -19,34 +21,35 @@ EVAL_LABELED_CSV = SAMPLE_DATA_DIR / "eval_labeled_reviews.csv"
 class SentimentThresholds:
     """Configurable sentiment polarity and compound score thresholds."""
     # TextBlob polarity thresholds: [-1.0, 1.0]
-    TB_POSITIVE_MIN: float = 0.05
-    TB_NEGATIVE_MAX: float = -0.05
+    TB_POSITIVE_MIN: float = float(os.getenv("REVIEWSENSE_TB_POS_MIN", "0.05"))
+    TB_NEGATIVE_MAX: float = float(os.getenv("REVIEWSENSE_TB_NEG_MAX", "-0.05"))
 
     # VADER compound thresholds: [-1.0, 1.0]
-    VADER_POSITIVE_MIN: float = 0.05
-    VADER_NEGATIVE_MAX: float = -0.05
+    VADER_POSITIVE_MIN: float = float(os.getenv("REVIEWSENSE_VADER_POS_MIN", "0.05"))
+    VADER_NEGATIVE_MAX: float = float(os.getenv("REVIEWSENSE_VADER_NEG_MAX", "-0.05"))
 
     # Subjectivity thresholds: [0.0, 1.0]
-    SUBJECTIVITY_OBJECTIVE_MAX: float = 0.35
-    SUBJECTIVITY_SUBJECTIVE_MIN: float = 0.65
+    SUBJECTIVITY_OBJECTIVE_MAX: float = float(os.getenv("REVIEWSENSE_SUBJ_OBJ_MAX", "0.35"))
+    SUBJECTIVITY_SUBJECTIVE_MIN: float = float(os.getenv("REVIEWSENSE_SUBJ_SUB_MIN", "0.65"))
 
 
 @dataclass(frozen=True)
 class AppConfig:
-    """Application-wide settings and resource boundaries."""
-    APP_NAME: str = "ReviewSense"
+    """Application-wide settings, environment variables, and resource boundaries."""
+    APP_NAME: str = os.getenv("REVIEWSENSE_APP_NAME", "ReviewSense")
     APP_TAGLINE: str = "Enterprise-Grade Product Review Intelligence & NLP Analytics"
-    APP_VERSION: str = "2.0.0"
+    APP_VERSION: str = "2.1.0"
+    ENVIRONMENT: str = os.getenv("REVIEWSENSE_ENV", "production")  # 'development', 'staging', 'production'
     
     # File upload limits
-    MAX_FILE_SIZE_MB: int = 25
-    MAX_ROWS_RECOMMENDED: int = 15000
+    MAX_FILE_SIZE_MB: int = int(os.getenv("REVIEWSENSE_MAX_FILE_SIZE_MB", "25"))
+    MAX_ROWS_RECOMMENDED: int = int(os.getenv("REVIEWSENSE_MAX_ROWS_RECOMMENDED", "15000"))
     SUPPORTED_EXTENSIONS: tuple = (".csv",)
     
-    # Common column candidate names for auto-detection
+    # Common column candidate names for auto-detection (ordered from most specific to general)
     TEXT_COLUMN_CANDIDATES: tuple = (
-        "review", "review_text", "reviewtext", "text", "comment", "feedback",
-        "body", "content", "customer_review", "summary"
+        "review_text", "reviewtext", "customer_review", "feedback", "comment",
+        "comments", "body", "content", "summary", "text", "review"
     )
     CATEGORY_COLUMN_CANDIDATES: tuple = (
         "category", "product_category", "department", "type", "segment"
@@ -62,7 +65,7 @@ class AppConfig:
     )
 
 
-# Color Palette and Design System Tokens (Dark / Premium SaaS Theme)
+# Color Palette and Design System Tokens
 THEME_TOKENS: Dict[str, Any] = {
     "positive_color": "#10B981",    # Emerald 500
     "positive_light": "rgba(16, 185, 129, 0.15)",
@@ -85,4 +88,3 @@ NEGATION_WORDS: frozenset = frozenset([
     "won't", "wouldn't", "shouldn't", "couldn't", "isn't", "aren't",
     "wasn't", "weren't", "hasn't", "haven't", "hadn't", "without"
 ])
-
