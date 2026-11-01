@@ -222,3 +222,12 @@ with export_col2:
         mime="text/csv",
         use_container_width=True
     )
+
+st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+exp_nav1, exp_nav2 = st.columns(2)
+with exp_nav1:
+    if st.button("📊 View Aggregated Charts in Dashboard →", use_container_width=True):
+        st.switch_page("pages/4_📊_Analytics_Dashboard.py")
+with exp_nav2:
+    if st.button("🤖 Ask AI Copilot Questions About This Data →", use_container_width=True):
+        st.switch_page("pages/8_🤖_AI_Copilot.py")

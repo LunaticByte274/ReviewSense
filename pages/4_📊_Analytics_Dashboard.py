@@ -68,7 +68,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ----------------- FILTERS BAR -----------------
-with st.expander("🔍 Interactive Data Filters & Dimensions", expanded=True):
+with st.expander("🔍 Interactive Data Filters (Sentiment, Category, Product, Polarity slider)", expanded=False):
     fc1, fc2, fc3, fc4 = st.columns(4)
 
     with fc1:
@@ -136,6 +136,7 @@ if filtered_df.empty:
 # ----------------- KPI CARDS -----------------
 kpis = AnalyticsEngine.calculate_kpis(filtered_df)
 nss = round(kpis["positive_pct"] - kpis["negative_pct"], 1)
+nss_sub = "🟢 Strong" if nss >= 20 else ("🟡 Moderate" if nss >= 0 else "🔴 Critical")
 
 c1, c2, c3, c4, c5, c6 = st.columns(6)
 with c1:
@@ -149,9 +150,21 @@ with c4:
 with c5:
     render_kpi_card("Mean Polarity", f"{kpis['avg_polarity']:+.3f}", f"Avg Subj: {kpis['avg_subjectivity']:.2f}", THEME_TOKENS["accent_secondary"])
 with c6:
-    render_kpi_card("Net Sentiment (NSS)", f"{nss:+0.1f}", "Pos% minus Neg%", "#10B981" if nss >= 20 else ("#F59E0B" if nss >= 0 else "#F43F5E"))
+    render_kpi_card("Net Sentiment (NSS)", f"{nss:+0.1f}", nss_sub, "#10B981" if nss >= 20 else ("#F59E0B" if nss >= 0 else "#F43F5E"))
 
-st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+st.markdown("""
+<div style="background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 12px 18px; margin: 12px 0 16px 0;">
+    <div style="font-size: 0.8rem; font-weight: 700; color: #6366F1; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">
+        💡 How to Navigate This Dashboard
+    </div>
+    <div style="font-size: 0.84rem; color: #CBD5E1; line-height: 1.6;">
+        • <b>📈 Overview & Trends:</b> Sentiment donut, polarity curve, volume by category, and timeline movements.<br>
+        • <b>🎯 Aspect Intelligence (ABSA):</b> Exactly what customers say about Battery, Sound, Build, App, Support, etc.<br>
+        • <b>🔤 Keyword & N-Gram Drivers:</b> Top words and bigram phrases in positive vs. negative feedback.<br>
+        • <b>🛡️ Quality & Anomalies:</b> Reviews where star ratings contradict textual sentiment (e.g. 5★ sarcastic complaint).
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 # ----------------- MULTI-DIMENSIONAL ANALYTICS TABS -----------------
 tab_overview, tab_aspects, tab_keywords, tab_anomalies = st.tabs([
@@ -307,3 +320,23 @@ with tab_anomalies:
             st.success("✓ No rating-sentiment contradictions detected in this dataset.")
     else:
         st.info("Anomaly detection requires a star rating column.")
+
+# ----------------- GUIDED NEXT STEPS -----------------
+st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
+st.markdown("""
+<div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(6, 182, 212, 0.05)); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 12px; padding: 18px 22px; margin-bottom: 14px;">
+    <div style="font-size: 0.95rem; font-weight: 700; color: #F8FAFC;">💬 Have specific questions about these numbers?</div>
+    <div style="font-size: 0.84rem; color: #94A3B8; margin-top: 3px;">
+        Ask our AI Copilot to summarize customer trends, find complaint drivers, or compare categories in plain English.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+nav_c1, nav_c2 = st.columns([1, 1])
+with nav_c1:
+    if st.button("🤖 Ask AI Copilot About These Reviews →", use_container_width=True, type="primary"):
+        st.switch_page("pages/8_🤖_AI_Copilot.py")
+with nav_c2:
+    if st.button("🔎 Inspect Individual Reviews in Explorer →", use_container_width=True):
+        st.switch_page("pages/5_🔎_Review_Explorer.py")
+

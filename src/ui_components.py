@@ -288,6 +288,21 @@ def render_sidebar():
         if st.button("🤖 Launch AI Copilot", use_container_width=True, help="Open conversational review intelligence analyst"):
             st.switch_page("pages/8_🤖_AI_Copilot.py")
 
+        # Platform Navigation Guide
+        with st.expander("🧭 Platform Guide (Where to Start?)", expanded=False):
+            st.markdown("""
+            <div style="font-size: 0.78rem; color: #CBD5E1; line-height: 1.5;">
+                <p style="margin: 0 0 6px 0;"><b>1. 🏠 Home:</b><br><span style="color: #94A3B8;">Executive KPIs, 10s interactive sandbox demo & metric definitions.</span></p>
+                <p style="margin: 0 0 6px 0;"><b>2. 🔍 Single Review:</b><br><span style="color: #94A3B8;">Test custom text or click sample presets for instant NLP scoring.</span></p>
+                <p style="margin: 0 0 6px 0;"><b>3. 📁 Bulk Analysis:</b><br><span style="color: #94A3B8;">Ingest CSV spreadsheets with custom column mapping.</span></p>
+                <p style="margin: 0 0 6px 0;"><b>4. 📊 Analytics:</b><br><span style="color: #94A3B8;">Visual distributions, aspect scores & trend timelines.</span></p>
+                <p style="margin: 0 0 6px 0;"><b>5. 🔎 Review Explorer:</b><br><span style="color: #94A3B8;">Search, filter by aspect/rating, and export CSVs.</span></p>
+                <p style="margin: 0 0 6px 0;"><b>6. ⚙️ Preprocessing:</b><br><span style="color: #94A3B8;">Inspect stop words, lemmatization & tokenization.</span></p>
+                <p style="margin: 0 0 6px 0;"><b>7. 📖 About:</b><br><span style="color: #94A3B8;">Dual-lexicon NLP architecture & academic benchmarks.</span></p>
+                <p style="margin: 0;"><b>8. 🤖 AI Copilot:</b><br><span style="color: #94A3B8;">Conversational assistant for ad-hoc queries & insights.</span></p>
+            </div>
+            """, unsafe_allow_html=True)
+
         # UI Accent Customizer
         with st.expander("🎨 Visual Accent Theme"):
             chosen_accent = st.selectbox(

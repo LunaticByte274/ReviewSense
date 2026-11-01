@@ -9,3 +9,4 @@ import runpy
 
 _APP_ENTRYPOINT = Path(__file__).parent / "app.py"
 runpy.run_path(str(_APP_ENTRYPOINT), run_name="__main__")
+

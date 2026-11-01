@@ -128,7 +128,7 @@ with col_input_left:
 
 analyze_btn = st.button("⚡ Run NLP Sentiment Analysis", type="primary", use_container_width=False)
 
-if analyze_btn or (user_review and selected_preset != "Select an example review..."):
+if analyze_btn or quick_injected or (user_review and selected_preset != "Select an example review..."):
     if not user_review.strip():
         st.warning("⚠️ Please enter or select a non-empty review text to evaluate.")
     else:
@@ -317,3 +317,15 @@ if st.session_state["single_review_history"]:
     import pandas as pd
     hist_df = pd.DataFrame(st.session_state["single_review_history"])
     st.dataframe(hist_df, use_container_width=True)
+
+# Guided Next Steps
+st.markdown("---")
+st.markdown("### 👉 Where to Next?")
+nx1, nx2 = st.columns(2)
+with nx1:
+    if st.button("📁 Analyze an Entire Spreadsheet (Bulk CSV) →", use_container_width=True):
+        st.switch_page("pages/3_📁_Bulk_Analysis.py")
+with nx2:
+    if st.button("🤖 Ask Questions About Reviews in Plain English →", use_container_width=True):
+        st.switch_page("pages/8_🤖_AI_Copilot.py")
+

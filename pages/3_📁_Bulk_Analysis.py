@@ -288,6 +288,10 @@ if active_df is not None:
             help="Generates an executive-ready HTML report with Net Sentiment Score, aspect intelligence, and top customer quotes ready for printing or presentation."
         )
 
+    st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
+    if st.button("📊 Open Interactive Analytics Dashboard with this Data →", type="primary", use_container_width=True, key="bulk_to_dash_btn"):
+        st.switch_page("pages/4_📊_Analytics_Dashboard.py")
+
     # ----------------- ENHANCEMENT: DATASET BENCHMARK COMPARISON -----------------
     if not active_meta.get("is_demo", False):
         st.markdown("---")
