@@ -396,11 +396,12 @@ def create_polarity_gauge(polarity: float) -> go.Figure:
         )
     ))
 
-    fig.update_layout(
+    gauge_layout = {
         **CHART_LAYOUT_DEFAULTS,
-        height=180,
-        margin=dict(l=25, r=25, t=25, b=10)
-    )
+        "height": 180,
+        "margin": dict(l=25, r=25, t=25, b=10),
+    }
+    fig.update_layout(**gauge_layout)
     return fig
 
 

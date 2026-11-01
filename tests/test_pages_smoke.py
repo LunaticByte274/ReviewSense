@@ -34,3 +34,22 @@ def test_all_pages_render_without_exception(page_name):
     at.run()
     assert not at.exception, f"Page {page_name} raised unhandled exception: {at.exception}"
 
+
+def test_single_review_page_analysis_interaction():
+    """Verify that entering review text and clicking analyze runs end-to-end including charts."""
+    page_path = PROJECT_ROOT / "pages" / "2_🔍_Single_Review.py"
+    at = AppTest.from_file(str(page_path), default_timeout=20)
+    at.run()
+    assert not at.exception
+
+    # Find the text_area and set review text
+    if at.text_area:
+        at.text_area[0].input("The sound quality and battery life are simply outstanding! Best purchase ever.").run()
+        # Find analyze button and click
+        for btn in at.button:
+            if "Run NLP Sentiment Analysis" in btn.label:
+                btn.click().run()
+                break
+        assert not at.exception, f"Single Review analysis raised exception: {at.exception}"
+
+
