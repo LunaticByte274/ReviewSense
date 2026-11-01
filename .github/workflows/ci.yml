@@ -59,3 +59,4 @@ jobs:
           context: .
           push: false
           tags: reviewsense:latest
+

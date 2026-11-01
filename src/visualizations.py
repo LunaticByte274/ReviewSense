@@ -561,4 +561,85 @@ def create_aspect_radar_chart(aspect_df: pd.DataFrame) -> go.Figure:
     return fig
 
 
+def create_aspect_treemap(aspect_df: pd.DataFrame) -> go.Figure:
+    """Generates an executive Treemap of product aspects sized by mentions and colored by Net Aspect Score."""
+    if aspect_df is None or aspect_df.empty:
+        fig = go.Figure()
+        fig.update_layout(**CHART_LAYOUT_DEFAULTS)
+        return fig
+
+    fig = go.Figure(go.Treemap(
+        labels=aspect_df["aspect"],
+        parents=["Product Dimensions"] * len(aspect_df),
+        values=aspect_df["total_mentions"],
+        textinfo="label+value+percent parent",
+        marker=dict(
+            colors=aspect_df["net_aspect_score"],
+            colorscale="RdYlGn",
+            colorbar=dict(title="Net Aspect Score"),
+            cmid=0.0,
+            line=dict(width=2, color="#0F172A")
+        ),
+        hovertemplate="<b>%{label}</b><br>Mentions: %{value}<br>Net Score: %{color:+0.1f}<extra></extra>"
+    ))
+
+    fig.update_layout(
+        **CHART_LAYOUT_DEFAULTS,
+        title=dict(text="<b>Aspect Dimension Density & Net Sentiment Treemap</b>", font=dict(size=15)),
+        height=360
+    )
+    return fig
+
+
+def create_word_cloud_bubble_chart(keyword_tuples: list, title: str = "Lexical Drivers Bubble Chart") -> go.Figure:
+    """Creates a visual circular bubble chart for keywords sized by frequency."""
+    if not keyword_tuples:
+        fig = go.Figure()
+        fig.update_layout(**CHART_LAYOUT_DEFAULTS)
+        return fig
+
+    words = [t[0] for t in keyword_tuples]
+    counts = [t[1] for t in keyword_tuples]
+    
+    # Generate pseudo-random coordinates for organic word cloud packing
+    np.random.seed(42)
+    x = np.random.uniform(10, 90, size=len(words))
+    y = np.random.uniform(10, 90, size=len(words))
+
+    # Scale bubble sizes
+    max_count = max(counts)
+    min_count = min(counts)
+    bubble_sizes = [20 + (c - min_count) / max(1, (max_count - min_count)) * 40 for c in counts]
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=x,
+        y=y,
+        mode="text+markers",
+        text=words,
+        textposition="middle center",
+        textfont=dict(size=12, color="#FFFFFF", family="JetBrains Mono"),
+        marker=dict(
+            size=bubble_sizes,
+            color=counts,
+            colorscale="Purples",
+            showscale=False,
+            opacity=0.85,
+            line=dict(color="rgba(255,255,255,0.3)", width=1.5)
+        ),
+        hovertemplate="<b>%{text}</b><br>Frequency: %{customdata} occurrences<extra></extra>",
+        customdata=counts
+    ))
+
+    fig.update_layout(
+        **CHART_LAYOUT_DEFAULTS,
+        title=dict(text=f"<b>{title}</b>", font=dict(size=14)),
+        xaxis=dict(showgrid=False, showticklabels=False, zeroline=False),
+        yaxis=dict(showgrid=False, showticklabels=False, zeroline=False),
+        height=320
+    )
+    return fig
+
+
+
 

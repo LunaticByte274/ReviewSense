@@ -178,6 +178,8 @@ class DataManager:
 
         total_rows = len(processed_df)
         vader_avail = nlp.is_vader_available
+        # Memoization cache for identical repeated review texts to maximize throughput
+        memo_cache: Dict[str, Any] = {}
 
         for idx, val in enumerate(processed_df[text_column]):
             if progress_callback and idx % 25 == 0:
@@ -194,19 +196,43 @@ class DataManager:
                 agreements.append(True if vader_avail else None)
             else:
                 raw_str = str(val)
-                # Clean html and whitespace for robust evaluation
-                norm_str = normalize_whitespace(clean_html(raw_str))
-                eval_text = norm_str if norm_str else raw_str
+                if raw_str in memo_cache:
+                    cached = memo_cache[raw_str]
+                    statuses.append(cached["status"])
+                    clean_texts.append(cached["clean_text"])
+                    polarities.append(cached["polarity"])
+                    subjectivities.append(cached["subjectivity"])
+                    tb_sentiments.append(cached["tb_sentiment"])
+                    vader_compounds.append(cached["vader_compound"])
+                    vader_sentiments.append(cached["vader_sentiment"])
+                    agreements.append(cached["agreement"])
+                else:
+                    # Clean html and whitespace for robust evaluation
+                    norm_str = normalize_whitespace(clean_html(raw_str))
+                    eval_text = norm_str if norm_str else raw_str
 
-                res = nlp.analyze(eval_text, include_vader=vader_avail)
-                statuses.append("Valid")
-                clean_texts.append(norm_str)
-                polarities.append(res.polarity)
-                subjectivities.append(res.subjectivity)
-                tb_sentiments.append(res.sentiment)
-                vader_compounds.append(res.vader_compound)
-                vader_sentiments.append(res.vader_sentiment)
-                agreements.append(res.agreement)
+                    res = nlp.analyze(eval_text, include_vader=vader_avail)
+                    st_val = "Valid"
+                    statuses.append(st_val)
+                    clean_texts.append(norm_str)
+                    polarities.append(res.polarity)
+                    subjectivities.append(res.subjectivity)
+                    tb_sentiments.append(res.sentiment)
+                    vader_compounds.append(res.vader_compound)
+                    vader_sentiments.append(res.vader_sentiment)
+                    agreements.append(res.agreement)
+
+                    # Store in memo cache
+                    memo_cache[raw_str] = {
+                        "status": st_val,
+                        "clean_text": norm_str,
+                        "polarity": res.polarity,
+                        "subjectivity": res.subjectivity,
+                        "tb_sentiment": res.sentiment,
+                        "vader_compound": res.vader_compound,
+                        "vader_sentiment": res.vader_sentiment,
+                        "agreement": res.agreement
+                    }
 
         if progress_callback:
             progress_callback(1.0)

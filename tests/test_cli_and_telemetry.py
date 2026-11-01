@@ -57,3 +57,4 @@ def test_cli_execution_via_subprocess(tmp_path):
         html = f.read()
         assert "ReviewSense Executive Report" in html
         assert "Net Sentiment Score" in html
+

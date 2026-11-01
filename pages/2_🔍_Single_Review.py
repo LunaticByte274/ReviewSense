@@ -184,6 +184,30 @@ if analyze_btn or (user_review and selected_preset != "Select an example review.
                 border_color="#8B5CF6"
             )
 
+        # ----------------- DUAL-ENGINE CONSENSUS ARENA -----------------
+        agree_status = result.agreement
+        if agree_status is not None:
+            if agree_status:
+                seal_html = '<span style="color: #10B981; font-weight: 800; font-size: 1.1rem;">✓ Dual Consensus Verified (100% Agreement)</span>'
+                seal_desc = "Both TextBlob and VADER independently arrived at the same sentiment classification."
+                seal_border = "border: 1px solid rgba(16, 185, 129, 0.4); box-shadow: 0 0 16px rgba(16, 185, 129, 0.15);"
+            else:
+                seal_html = '<span style="color: #F59E0B; font-weight: 800; font-size: 1.1rem;">⚠️ Lexical Divergence Detected</span>'
+                seal_desc = f"TextBlob classified as '{result.sentiment}', while VADER classified as '{result.vader_sentiment}'. This highlights nuanced language or capitalization emphasis."
+                seal_border = "border: 1px solid rgba(245, 158, 11, 0.4); box-shadow: 0 0 16px rgba(245, 158, 11, 0.15);"
+
+            st.markdown(f"""
+            <div style="background: rgba(22, 30, 46, 0.9); border-radius: 10px; padding: 14px 20px; margin: 12px 0 16px 0; display: flex; justify-content: space-between; align-items: center; {seal_border}">
+                <div>
+                    <div>{seal_html}</div>
+                    <div style="font-size: 0.8rem; color: #94A3B8; margin-top: 2px;">{seal_desc}</div>
+                </div>
+                <div style="font-size: 0.75rem; background: rgba(255,255,255,0.06); padding: 4px 10px; border-radius: 6px; color: #CBD5E1; font-weight: 600;">
+                    TB: {result.sentiment} | VADER: {result.vader_sentiment}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
         # Visual Indicators Row
         g_col1, g_col2 = st.columns([1, 1])
 

@@ -13,4 +13,8 @@ headless = true
 enableCORS = false
 enableXsrfProtection = true
 maxUploadSize = 25
+enableStaticServing = true
+
+[runner]
+fastReruns = true
 

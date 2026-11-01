@@ -48,3 +48,4 @@ services:
 networks:
   reviewsense_net:
     driver: bridge
+

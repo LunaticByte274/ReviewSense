@@ -317,16 +317,20 @@ def render_sidebar():
 
 
 def render_kpi_card(title: str, value: Any, subtitle: str = "", border_color: Optional[str] = None):
-    """Renders an ultra-modern glassmorphism KPI metric card with animated border."""
-    border_style = f"border-left: 4px solid {border_color};" if border_color else ""
+    """Renders an ultra-modern glassmorphism KPI metric card with animated border and subtle indicator bar."""
+    accent_col = border_color or "#6366F1"
+    border_style = f"border-left: 4px solid {accent_col};"
     st.markdown(f"""
     <div class="metric-card" style="{border_style}">
         <div class="metric-title">
             <span>{title}</span>
-            <span style="color: {border_color or '#94A3B8'}; font-size: 14px;">●</span>
+            <span style="color: {accent_col}; font-size: 14px;">●</span>
         </div>
         <div class="metric-value">{value}</div>
         {f'<div class="metric-subtitle">{subtitle}</div>' if subtitle else ''}
+        <div style="height: 3px; background: rgba(255,255,255,0.06); border-radius: 2px; margin-top: 10px; overflow: hidden;">
+            <div style="height: 100%; width: 70%; background: {accent_col}; border-radius: 2px;"></div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 

@@ -29,7 +29,9 @@ from src.visualizations import (
     create_timeline_trend_chart,
     create_aspect_sentiment_chart,
     create_ngram_bar_chart,
-    create_rating_polarity_scatter
+    create_rating_polarity_scatter,
+    create_aspect_treemap,
+    create_word_cloud_bubble_chart
 )
 from src.ui_components import (
     inject_custom_css,
@@ -246,7 +248,11 @@ with tab_aspects:
     aspect_df = default_aspect_engine.analyze_dataset_aspects(filtered_df, text_col=text_col)
 
     if not aspect_df.empty:
-        st.plotly_chart(create_aspect_sentiment_chart(aspect_df), use_container_width=True)
+        col_asp1, col_asp2 = st.columns([1, 1])
+        with col_asp1:
+            st.plotly_chart(create_aspect_sentiment_chart(aspect_df), use_container_width=True)
+        with col_asp2:
+            st.plotly_chart(create_aspect_treemap(aspect_df), use_container_width=True)
 
         st.markdown("##### 📋 Aspect Dimension Scorecard")
         st.dataframe(aspect_df, use_container_width=True)
@@ -266,9 +272,17 @@ with tab_keywords:
         neg_keywords = AnalyticsEngine.extract_top_keywords(filtered_df, text_col=text_col, top_n=10, sentiment_filter="Negative")
         st.plotly_chart(create_ngram_bar_chart(neg_keywords, "Top Words in Negative Reviews", THEME_TOKENS["negative_color"]), use_container_width=True)
 
-    st.markdown("##### 🔗 Common Customer Bigrams (Two-Word Phrases)")
-    bigrams = AnalyticsEngine.extract_ngrams(filtered_df, n=2, top_k=10, text_col=text_col)
-    st.plotly_chart(create_ngram_bar_chart(bigrams, "Most Frequent Bigram Phrases", THEME_TOKENS["accent_primary"]), use_container_width=True)
+    # Bubble Cloud & Bigrams Row
+    b_col1, b_col2 = st.columns([1, 1])
+    with b_col1:
+        st.markdown("##### 🫧 Interactive Lexical Bubble Cloud")
+        all_kw = AnalyticsEngine.extract_top_keywords(filtered_df, text_col=text_col, top_n=14)
+        st.plotly_chart(create_word_cloud_bubble_chart(all_kw, "Key Feedback Drivers Bubble Cloud"), use_container_width=True)
+
+    with b_col2:
+        st.markdown("##### 🔗 Common Customer Bigrams")
+        bigrams = AnalyticsEngine.extract_ngrams(filtered_df, n=2, top_k=8, text_col=text_col)
+        st.plotly_chart(create_ngram_bar_chart(bigrams, "Most Frequent Bigram Phrases", THEME_TOKENS["accent_primary"]), use_container_width=True)
 
 # ----------------- TAB 4: QUALITY & ANOMALIES -----------------
 with tab_anomalies:

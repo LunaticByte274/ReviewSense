@@ -51,31 +51,34 @@ PRODUCT_ASPECTS = {
 }
 
 
+# Pre-compiled high-performance regular expressions for instantaneous keyword matching
+ASPECT_COMPILED_PATTERNS = {
+    aspect: re.compile(r"\b(?:" + "|".join(re.escape(kw) for kw in keywords) + r")\b", re.IGNORECASE)
+    for aspect, keywords in PRODUCT_ASPECTS.items()
+}
+
+
 class AspectEngine:
-    """Performs clause-level aspect sentiment extraction and dataset aggregations."""
+    """Performs clause-level aspect sentiment extraction and dataset aggregations with pre-compiled regex acceleration."""
 
     @staticmethod
     def extract_aspects_from_text(text: str) -> Dict[str, Dict[str, Any]]:
         """
-        Splits review into sentences/clauses, matches keywords to defined aspects,
+        Splits review into sentences/clauses, matches keywords using pre-compiled regexes,
         and computes sentiment specifically for the clause mentioning that aspect.
         """
         if not isinstance(text, str) or not text.strip():
             return {}
 
         results: Dict[str, Dict[str, Any]] = {}
-        # Segment into sentences using regex boundary detection
+        # Fast sentence boundary segmentation
         sentences = re.split(r"(?<=[.!?])\s+", text)
 
-        for aspect_name, keywords in PRODUCT_ASPECTS.items():
+        for aspect_name, compiled_pat in ASPECT_COMPILED_PATTERNS.items():
             matched_sentences = []
             for s in sentences:
-                s_lower = s.lower()
-                for kw in keywords:
-                    # Match whole word or key phrase
-                    if re.search(r"\b" + re.escape(kw) + r"\b", s_lower):
-                        matched_sentences.append(s.strip())
-                        break
+                if compiled_pat.search(s):
+                    matched_sentences.append(s.strip())
 
             if matched_sentences:
                 combined_clause = " ".join(matched_sentences)
