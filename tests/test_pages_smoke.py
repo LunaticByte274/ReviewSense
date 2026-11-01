@@ -26,6 +26,7 @@ def test_app_entrypoint_smoke():
     "5_🔎_Review_Explorer.py",
     "6_⚙️_Text_Preprocessing.py",
     "7_📖_About_Project.py",
+    "8_🤖_AI_Copilot.py",
 ])
 def test_all_pages_render_without_exception(page_name):
     page_path = PROJECT_ROOT / "pages" / page_name
@@ -33,6 +34,21 @@ def test_all_pages_render_without_exception(page_name):
     at = AppTest.from_file(str(page_path), default_timeout=20)
     at.run()
     assert not at.exception, f"Page {page_name} raised unhandled exception: {at.exception}"
+
+
+def test_copilot_page_smoke_and_quick_prompt():
+    """Verify that 8_🤖_AI_Copilot.py renders and clicking a quick prompt pill responds cleanly."""
+    page_path = PROJECT_ROOT / "pages" / "8_🤖_AI_Copilot.py"
+    at = AppTest.from_file(str(page_path), default_timeout=20)
+    at.run()
+    assert not at.exception
+
+    # Find quick prompt button (e.g., Health & NSS) and click
+    for btn in at.button:
+        if "Health & NSS" in btn.label:
+            btn.click().run()
+            break
+    assert not at.exception, f"Copilot quick prompt execution raised exception: {at.exception}"
 
 
 def test_single_review_page_analysis_interaction():

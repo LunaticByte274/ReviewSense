@@ -201,6 +201,28 @@ if not aspect_df.empty:
 
 st.markdown("---")
 
+# AI Review Copilot Spotlight Callout
+st.markdown("""
+<div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(6, 182, 212, 0.12)); border: 1px solid rgba(99, 102, 241, 0.35); border-radius: 12px; padding: 20px 24px; margin: 10px 0 20px 0;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 22px;">🤖</span>
+                <span style="color: #F8FAFC; font-size: 1.15rem; font-weight: 800;">ReviewSense AI Review Copilot</span>
+                <span style="background: rgba(99, 102, 241, 0.25); color: #818CF8; border: 1px solid rgba(99, 102, 241, 0.4); font-size: 0.72rem; padding: 2px 8px; border-radius: 4px; font-weight: 700;">CONVERSATIONAL NLP</span>
+            </div>
+            <p style="margin: 6px 0 0 0; color: #94A3B8; font-size: 0.86rem; line-height: 1.4;">
+                Ask questions in plain English: <i>"What are our top complaints?"</i>, <i>"How is battery feedback?"</i>, <i>"Find rating anomalies"</i>, or score custom text.
+            </p>
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+if st.button("💬 Launch Conversational AI Copilot →", type="primary", use_container_width=True, key="root_btn_copilot"):
+    st.switch_page("pages/8_🤖_AI_Copilot.py")
+
+st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
+
 # Quick Navigation Actions
 st.markdown("### 🚀 Platform Capabilities & Quick Launch")
 act1, act2, act3, act4 = st.columns(4)

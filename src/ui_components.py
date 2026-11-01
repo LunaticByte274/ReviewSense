@@ -284,6 +284,10 @@ def render_sidebar():
                     st.success("Demonstration data restored!")
                     st.rerun()
 
+        # AI Copilot Quick Launcher
+        if st.button("🤖 Launch AI Copilot", use_container_width=True, help="Open conversational review intelligence analyst"):
+            st.switch_page("pages/8_🤖_AI_Copilot.py")
+
         # UI Accent Customizer
         with st.expander("🎨 Visual Accent Theme"):
             chosen_accent = st.selectbox(
