@@ -46,7 +46,18 @@ class NLPEngine:
     def __init__(self, thresholds: Optional[SentimentThresholds] = None):
         self.thresholds = thresholds or SentimentThresholds()
         self._vader_analyzer = None
+        self._init_corpora()
         self._init_vader()
+
+    def _init_corpora(self):
+        """Ensures essential NLTK corpora are downloaded quietly for cloud deployment runtimes."""
+        try:
+            import nltk
+            nltk.download("punkt_tab", quiet=True)
+            nltk.download("averaged_perceptron_tagger_eng", quiet=True)
+            nltk.download("vader_lexicon", quiet=True)
+        except Exception:
+            pass
 
     def _init_vader(self):
         """Initializes VADER analyzer safely if installed and data is present."""
