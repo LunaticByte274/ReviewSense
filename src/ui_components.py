@@ -224,3 +224,4 @@ def render_empty_state(message: str = "No reviews match the specified filters.")
         <p style="color: #94A3B8; font-size: 0.88rem; max-width: 400px; margin: 0 auto;">{message}</p>
     </div>
     """, unsafe_allow_html=True)
+

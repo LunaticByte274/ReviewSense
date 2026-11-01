@@ -16,6 +16,7 @@ import streamlit as st
 from src.config import AppConfig, THEME_TOKENS
 from src.data_manager import DataManager
 from src.nlp_engine import default_nlp_engine
+from src.aspect_engine import default_aspect_engine
 from src.visualizations import create_polarity_gauge
 from src.ui_components import (
     inject_custom_css,
@@ -187,8 +188,42 @@ if analyze_btn or (user_review and selected_preset != "Select an example review.
         st.markdown("##### 📝 Score Interpretation & Analyzer Agreement")
         st.info(result.explanation)
 
-        if result.vader_compound is not None:
-            with st.expander("🔬 Deep Dive: Lexicon Component Breakdown"):
+        # ----------------- ENHANCEMENT: LIVE ASPECT EXTRACTION -----------------
+        extracted_aspects = default_aspect_engine.extract_aspects_from_text(user_review)
+        if extracted_aspects:
+            st.markdown("##### 🎯 Granular Aspect Sentiment Extraction")
+            aspect_cols = st.columns(min(4, len(extracted_aspects)))
+            for idx, (asp_name, asp_data) in enumerate(extracted_aspects.items()):
+                target_col = aspect_cols[idx % len(aspect_cols)]
+                with target_col:
+                    s_color = (
+                        THEME_TOKENS["positive_color"] if asp_data["sentiment"] == "Positive"
+                        else (THEME_TOKENS["negative_color"] if asp_data["sentiment"] == "Negative" else THEME_TOKENS["neutral_color"])
+                    )
+                    st.markdown(f"""
+                    <div style="background: rgba(30, 41, 59, 0.7); border-left: 3px solid {s_color}; border-radius: 6px; padding: 10px 14px; margin-bottom: 8px;">
+                        <div style="font-size: 0.75rem; color: #94A3B8; font-weight: 600; text-transform: uppercase;">{asp_name}</div>
+                        <div style="font-size: 0.92rem; font-weight: 700; color: {s_color}; margin: 2px 0;">{asp_data['sentiment']} ({asp_data['polarity']:+.2f})</div>
+                        <div style="font-size: 0.76rem; color: #CBD5E1; font-style: italic;">"{asp_data['snippet'][:75]}..."</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+        # ----------------- ENHANCEMENT: LINGUISTIC INTENSITY & CONTRAST -----------------
+        has_contrast = any(w in user_review.lower().split() for w in ["but", "however", "although", "yet", "though"])
+        excl_count = user_review.count("!")
+        upper_tokens = [w for w in user_review.split() if w.isupper() and len(w) > 1]
+        
+        with st.expander("🔬 Advanced Linguistic Nuance & Intensity Telemetry"):
+            lc1, lc2, lc3 = st.columns(3)
+            with lc1:
+                st.metric("Exclamation Mark Intensity", f"{excl_count} marks", delta="High emphasis" if excl_count >= 2 else "Normal")
+            with lc2:
+                st.metric("Capitalized Emphasis Tokens", f"{len(upper_tokens)} words", delta=", ".join(upper_tokens[:3]) if upper_tokens else "None")
+            with lc3:
+                st.metric("Contrastive Conjunction", "Detected" if has_contrast else "None", delta="Mixed opinion risk" if has_contrast else "Uniform stance", delta_color="inverse" if has_contrast else "normal")
+
+            if result.vader_compound is not None:
+                st.markdown("---")
                 v_c1, v_c2, v_c3, v_c4 = st.columns(4)
                 v_c1.metric("VADER Positivity", f"{result.vader_pos:.3f}")
                 v_c2.metric("VADER Neutrality", f"{result.vader_neu:.3f}")

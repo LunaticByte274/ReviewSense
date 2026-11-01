@@ -277,6 +277,71 @@ class AnalyticsEngine:
         return word_counts.most_common(top_n)
 
     @staticmethod
+    def detect_sentiment_anomalies(df: pd.DataFrame, rating_col: str = "rating", pol_col: str = "tb_polarity") -> pd.DataFrame:
+        """
+        Detects anomalies where user star ratings conflict with predicted NLP sentiment.
+        - High-rating negative text: Rating >= 4, but Polarity < -0.05 (indicates sarcasm or rating error).
+        - Low-rating positive text: Rating <= 2, but Polarity > +0.05 (indicates accidental low rating).
+        """
+        if df is None or df.empty or rating_col not in df.columns or pol_col not in df.columns:
+            return pd.DataFrame()
+
+        valid_df = df[df["review_status"] == "Valid"] if "review_status" in df.columns else df
+        if valid_df.empty:
+            return pd.DataFrame()
+
+        work_df = valid_df.copy()
+        work_df["num_rating"] = pd.to_numeric(work_df[rating_col], errors="coerce")
+        rated = work_df.dropna(subset=["num_rating", pol_col])
+
+        # Anomaly condition
+        anomaly_mask = (
+            ((rated["num_rating"] >= 4) & (rated[pol_col] < -0.05)) |
+            ((rated["num_rating"] <= 2) & (rated[pol_col] > 0.05))
+        )
+
+        anomalies = rated[anomaly_mask].copy()
+        if not anomalies.empty:
+            anomalies["anomaly_type"] = anomalies.apply(
+                lambda r: "★ High Rating / Negative Text" if r["num_rating"] >= 4 else "★ Low Rating / Positive Text",
+                axis=1
+            )
+            return anomalies.sort_values(by=pol_col)
+        return pd.DataFrame()
+
+    @staticmethod
+    def extract_ngrams(
+        df: pd.DataFrame,
+        n: int = 2,
+        top_k: int = 10,
+        text_col: str = "review_text",
+        sentiment_filter: Optional[str] = None
+    ) -> List[Tuple[str, int]]:
+        """Extracts most common N-grams (bigrams or trigrams) excluding uninformative stopwords."""
+        if df is None or df.empty or text_col not in df.columns:
+            return []
+
+        subset = df[df["review_status"] == "Valid"] if "review_status" in df.columns else df
+        if sentiment_filter and "tb_sentiment" in subset.columns:
+            subset = subset[subset["tb_sentiment"] == sentiment_filter]
+
+        from collections import Counter
+        from src.preprocessing import get_negation_aware_stopwords
+        stops = get_negation_aware_stopwords()
+
+        ngram_counts = Counter()
+        for text in subset[text_col]:
+            if isinstance(text, str):
+                tokens = [t.lower() for t in tokenize_text(text) if t.isalpha()]
+                for i in range(len(tokens) - n + 1):
+                    gram = tokens[i:i+n]
+                    # Filter out if all words in gram are stopwords
+                    if not all(w in stops for w in gram):
+                        ngram_counts[" ".join(gram)] += 1
+
+        return ngram_counts.most_common(top_k)
+
+    @staticmethod
     def evaluate_model_on_ground_truth(
         eval_df: pd.DataFrame,
         ground_truth_col: str = "true_sentiment",
@@ -323,3 +388,4 @@ class AnalyticsEngine:
             "classification_report": rep_dict,
             "labels": labels
         }
+

@@ -33,3 +33,4 @@ def test_all_pages_render_without_exception(page_name):
     at = AppTest.from_file(str(page_path), default_timeout=20)
     at.run()
     assert not at.exception, f"Page {page_name} raised unhandled exception: {at.exception}"
+

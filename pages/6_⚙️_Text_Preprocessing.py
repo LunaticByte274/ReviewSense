@@ -169,3 +169,46 @@ st.info("""
 In generic text classification (e.g. topic categorization), removing common stopwords like *not, neither, no* reduces noise and feature dimensionality. 
 However, in **sentiment analysis**, stopwords like *not* invert valence (*"not good"* -> *"good"*). ReviewSense enforces **negation-aware filtering**, protecting 27 sentiment-critical negation particles from accidental erasure.
 """)
+
+# ----------------- ENHANCEMENT: PART-OF-SPEECH (POS) TAGGING -----------------
+st.markdown("---")
+st.markdown("### 🏷️ Lexical Part-of-Speech (POS) Tagging & Modifier Extraction")
+st.markdown("TextBlob extracts grammatical tags to identify adjectives and adverbs that carry emotional valence:")
+
+from textblob import TextBlob
+
+try:
+    blob = TextBlob(input_text)
+    pos_tags = blob.tags
+except Exception:
+    # Graceful fallback if POS tagger resource is not loaded
+    tokens = input_text.split()
+    pos_tags = [(t, "WORD") for t in tokens]
+
+pos_pills_html = ""
+for word, tag in pos_tags:
+    if tag.startswith("JJ"):  # Adjective
+        badge_style = "background: rgba(99, 102, 241, 0.2); border: 1px solid #6366F1; color: #A5B4FC;"
+        desc = "Adjective (Sentiment Carrier)"
+    elif tag.startswith("RB"):  # Adverb
+        badge_style = "background: rgba(139, 92, 246, 0.2); border: 1px solid #8B5CF6; color: #C4B5FD;"
+        desc = "Adverb (Modifier)"
+    elif tag.startswith("NN"):  # Noun
+        badge_style = "background: rgba(16, 185, 129, 0.2); border: 1px solid #10B981; color: #6EE7B7;"
+        desc = "Noun (Aspect / Entity)"
+    elif tag.startswith("VB"):  # Verb
+        badge_style = "background: rgba(245, 158, 11, 0.2); border: 1px solid #F59E0B; color: #FCD34D;"
+        desc = "Verb (Action)"
+    else:
+        badge_style = "background: rgba(148, 163, 184, 0.1); border: 1px solid rgba(255,255,255,0.08); color: #94A3B8;"
+        desc = tag
+
+    pos_pills_html += f"""
+    <div style="display: inline-flex; flex-direction: column; align-items: center; {badge_style} border-radius: 6px; padding: 4px 8px; margin: 4px; font-size: 0.8rem;">
+        <span style="font-weight: 700; font-family: 'JetBrains Mono', monospace;">{word}</span>
+        <span style="font-size: 0.65rem; text-transform: uppercase;">{tag}</span>
+    </div>
+    """
+
+st.markdown(f"<div style='background: #1E293B; border-radius: 8px; padding: 16px; border: 1px solid rgba(255,255,255,0.08);'>{pos_pills_html}</div>", unsafe_allow_html=True)
+

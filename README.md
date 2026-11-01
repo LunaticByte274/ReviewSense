@@ -4,7 +4,7 @@
 [![Python Version](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.66-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
 [![NLP Engine](https://img.shields.io/badge/NLP-TextBlob%20%2B%20VADER-blueviolet)](#8-nlp-methodology--algorithms)
-[![Tests](https://img.shields.io/badge/Pytest-36%20Passed-10B981?logo=pytest&logoColor=white)](#16-automated-testing)
+[![Tests](https://img.shields.io/badge/Pytest-41%20Passed-10B981?logo=pytest&logoColor=white)](#10-automated-testing-suite)
 [![License](https://img.shields.io/badge/License-MIT-6366F1)](#credits--license)
 
 ---
@@ -304,3 +304,4 @@ Access the application at `http://localhost:8501`.
 - **NLP Libraries**: [TextBlob](https://textblob.readthedocs.io/), [NLTK VADER](https://www.nltk.org/)
 - **UI & Analytics**: [Streamlit](https://streamlit.io/), [Plotly](https://plotly.com/python/)
 - **License**: MIT Open Source Academic License
+

@@ -10,6 +10,7 @@ import pandas as pd
 from src.config import AppConfig, THEME_TOKENS
 from src.data_manager import DataManager
 from src.analytics import AnalyticsEngine
+from src.aspect_engine import default_aspect_engine
 from src.visualizations import create_sentiment_donut_chart, create_sentiment_bar_chart
 from src.ui_components import (
     inject_custom_css,
@@ -59,10 +60,11 @@ st.markdown(f"""
 
 # Calculate real KPIs from active dataset
 kpis = AnalyticsEngine.calculate_kpis(df)
+nss = round(kpis["positive_pct"] - kpis["negative_pct"], 1)
 
 # KPI Metrics Bar
 st.markdown("### 📈 Executive Metrics Overview")
-c1, c2, c3, c4, c5 = st.columns(5)
+c1, c2, c3, c4, c5, c6 = st.columns(6)
 
 with c1:
     render_kpi_card(
@@ -99,6 +101,13 @@ with c5:
         subtitle=f"Subj: {kpis['avg_subjectivity']:.2f}",
         border_color=THEME_TOKENS["accent_secondary"]
     )
+with c6:
+    render_kpi_card(
+        title="Net Sentiment (NSS)",
+        value=f"{nss:+0.1f}",
+        subtitle="Pos% minus Neg%",
+        border_color="#10B981" if nss >= 20 else ("#F59E0B" if nss >= 0 else "#F43F5E")
+    )
 
 st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
@@ -110,6 +119,36 @@ with col_chart_1:
 
 with col_chart_2:
     st.plotly_chart(create_sentiment_bar_chart(df), use_container_width=True)
+
+# Aspect Intelligence Summary Callout
+text_col = meta.get("text_column", "review_text")
+aspect_df = default_aspect_engine.analyze_dataset_aspects(df, text_col=text_col)
+if not aspect_df.empty:
+    best_aspect = aspect_df.sort_values(by="net_aspect_score", ascending=False).iloc[0]
+    worst_aspect = aspect_df.sort_values(by="net_aspect_score", ascending=True).iloc[0]
+    
+    st.markdown("### 🎯 Key Product Drivers (Aspect Intelligence)")
+    a_col1, a_col2 = st.columns(2)
+    with a_col1:
+        st.markdown(f"""
+        <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 14px 18px;">
+            <div style="font-size: 0.75rem; color: #10B981; font-weight: 700; text-transform: uppercase;">Top Customer Praise Driver</div>
+            <div style="font-size: 1.15rem; font-weight: 700; color: #F8FAFC; margin: 4px 0;">{best_aspect['aspect']}</div>
+            <div style="font-size: 0.82rem; color: #CBD5E1;">
+                <b>{best_aspect['positive_rate']}% Positive</b> ({best_aspect['positive_count']} praises) • Net Score: <b>{best_aspect['net_aspect_score']:+0.1f}</b>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    with a_col2:
+        st.markdown(f"""
+        <div style="background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.25); border-radius: 8px; padding: 14px 18px;">
+            <div style="font-size: 0.75rem; color: #F43F5E; font-weight: 700; text-transform: uppercase;">Primary Customer Pain Point</div>
+            <div style="font-size: 1.15rem; font-weight: 700; color: #F8FAFC; margin: 4px 0;">{worst_aspect['aspect']}</div>
+            <div style="font-size: 0.82rem; color: #CBD5E1;">
+                <b>{worst_aspect['negative_rate']}% Negative</b> ({worst_aspect['negative_count']} complaints) • Net Score: <b>{worst_aspect['net_aspect_score']:+0.1f}</b>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
 st.markdown("---")
 
@@ -176,3 +215,4 @@ with st.expander("ℹ️ Getting Started & Platform Architecture Guide"):
     - **Dual-Engine NLP**: Sentiment is scored using **TextBlob** (Pattern-based lexicon evaluating polarity and subjectivity) alongside **VADER** (rule-based valence analyzer tuned for social and review sentiment).
     - **Restoration**: If you wish to reset your view back to the bundled 50-review demo dataset, use the **↺ Restore Demo Data** button in the sidebar anytime.
     """)
+

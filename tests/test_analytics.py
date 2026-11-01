@@ -76,3 +76,36 @@ def test_ground_truth_model_evaluation():
     assert results["accuracy"] == 0.8
     assert results["confusion_matrix"] is not None
     assert results["macro_f1"] > 0.0
+
+
+def test_sentiment_anomalies_detection():
+    df = pd.DataFrame({
+        "rating": [5, 1, 3],
+        "tb_polarity": [-0.6, 0.7, 0.0],
+        "tb_sentiment": ["Negative", "Positive", "Neutral"],
+        "review_status": ["Valid", "Valid", "Valid"]
+    })
+    anomalies = AnalyticsEngine.detect_sentiment_anomalies(df, rating_col="rating", pol_col="tb_polarity")
+    assert not anomalies.empty
+    assert len(anomalies) == 2
+    types = list(anomalies["anomaly_type"].values)
+    assert any("High Rating" in t for t in types)
+    assert any("Low Rating" in t for t in types)
+
+
+def test_ngram_extraction():
+    df = pd.DataFrame({
+        "review_text": [
+            "Noise cancellation is remarkable.",
+            "Noise cancellation blocks all commute noise.",
+            "Great battery endurance."
+        ],
+        "review_status": ["Valid", "Valid", "Valid"],
+        "tb_sentiment": ["Positive", "Positive", "Positive"]
+    })
+    bigrams = AnalyticsEngine.extract_ngrams(df, n=2, top_k=5, text_col="review_text")
+    assert len(bigrams) > 0
+    bigram_names = [b[0] for b in bigrams]
+    assert "noise cancellation" in bigram_names
+
+

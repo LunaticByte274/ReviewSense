@@ -148,6 +148,16 @@ with tab_arch:
       - $c \ge +0.05 \implies$ **Positive**
       - $c \le -0.05 \implies$ **Negative**
       - $-0.05 < c < +0.05 \implies$ **Neutral**
+
+    #### 3. Aspect-Based Sentiment Analysis (ABSA)
+    Reviews often combine praise for one feature with criticism of another (*"Display is gorgeous but battery is terrible"*). ReviewSense segments reviews into constituent clauses and computes polarity scoped directly to targeted domain aspects ($A$):
+    - Curated dimensions: Battery, Audio, Display, Build, Performance, Price, Software, Support.
+    - Net Aspect Score: $\text{NAS} = \text{Positive Rate} - \text{Negative Rate}$.
+
+    #### 4. Net Sentiment Score (NSS)
+    An executive benchmark metric modeled after Net Promoter Score (NPS):
+    $$\text{NSS} = \% \text{Positive Reviews} - \% \text{Negative Reviews}$$
+    Ranges from $-100.0$ to $+100.0$, offering a unified organizational barometer of customer satisfaction.
     """)
 
 # ----------------- TAB 3: BENCHMARK EVALUATION -----------------

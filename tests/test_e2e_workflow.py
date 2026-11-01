@@ -63,3 +63,4 @@ def test_e2e_full_pipeline_flow():
     csv_out = safe_export.to_csv(index=False)
     assert "feedback" in csv_out
     assert "tb_sentiment" in csv_out
+

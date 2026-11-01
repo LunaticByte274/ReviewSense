@@ -17,6 +17,7 @@ import pandas as pd
 
 from src.config import AppConfig, THEME_TOKENS
 from src.data_manager import DataManager, sanitize_dataframe_for_export
+from src.aspect_engine import PRODUCT_ASPECTS
 from src.ui_components import (
     inject_custom_css,
     render_sidebar,
@@ -79,12 +80,16 @@ with st.container():
 
         sort_choice = st.selectbox("Sort Order:", list(sort_options.keys()), index=0)
 
-    # Sliders row
-    s_col1, s_col2 = st.columns(2)
-    with s_col1:
+    # Secondary filter row: Aspect and Anomalies
+    f2_col1, f2_col2, f2_col3 = st.columns([1.5, 1.5, 1])
+    with f2_col1:
+        aspect_filter_opts = ["All Aspects"] + list(PRODUCT_ASPECTS.keys())
+        selected_aspect = st.selectbox("Filter by Mentioned Aspect:", aspect_filter_opts, index=0)
+    with f2_col2:
         pol_bounds = st.slider("Polarity Range:", -1.0, 1.0, (-1.0, 1.0), 0.05)
-    with s_col2:
+    with f2_col3:
         sub_bounds = st.slider("Subjectivity Range:", 0.0, 1.0, (0.0, 1.0), 0.05)
+        only_anomalies = st.checkbox("Show Rating Mismatches Only", value=False, help="Filters reviews where star rating contradicts textual polarity (e.g. 5-star negative or 1-star positive).")
 
 # Apply Filters
 exp_df = df.copy()
@@ -94,6 +99,18 @@ if selected_sent != "All" and "tb_sentiment" in exp_df.columns:
 
 if selected_cat != "All" and cat_col and cat_col in exp_df.columns:
     exp_df = exp_df[exp_df[cat_col].astype(str) == selected_cat]
+
+if selected_aspect != "All Aspects":
+    keywords = PRODUCT_ASPECTS[selected_aspect]
+    pattern = r"\b(?:" + "|".join(keywords) + r")\b"
+    text_col = meta.get("text_column", "review_text")
+    if text_col in exp_df.columns:
+        exp_df = exp_df[exp_df[text_col].astype(str).str.contains(pattern, case=False, na=False)]
+
+if only_anomalies and "rating" in exp_df.columns and "tb_polarity" in exp_df.columns:
+    num_r = pd.to_numeric(exp_df["rating"], errors="coerce")
+    anom_mask = ((num_r >= 4) & (exp_df["tb_polarity"] < -0.05)) | ((num_r <= 2) & (exp_df["tb_polarity"] > 0.05))
+    exp_df = exp_df[anom_mask]
 
 if "tb_polarity" in exp_df.columns:
     exp_df = exp_df[(exp_df["tb_polarity"] >= pol_bounds[0]) & (exp_df["tb_polarity"] <= pol_bounds[1])]

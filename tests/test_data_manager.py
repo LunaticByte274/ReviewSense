@@ -96,3 +96,4 @@ def test_demonstration_dataset_loads_and_scores():
     assert "tb_sentiment" in df.columns
     assert meta["source"] == "Bundled Demonstration Dataset"
     assert meta["valid_rows"] > 0
+

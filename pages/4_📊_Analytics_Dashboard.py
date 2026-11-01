@@ -18,6 +18,7 @@ import pandas as pd
 from src.config import AppConfig, THEME_TOKENS
 from src.data_manager import DataManager
 from src.analytics import AnalyticsEngine
+from src.aspect_engine import default_aspect_engine
 from src.visualizations import (
     create_sentiment_donut_chart,
     create_sentiment_bar_chart,
@@ -25,7 +26,10 @@ from src.visualizations import (
     create_subjectivity_distribution,
     create_category_sentiment_chart,
     create_rating_vs_sentiment_chart,
-    create_timeline_trend_chart
+    create_timeline_trend_chart,
+    create_aspect_sentiment_chart,
+    create_ngram_bar_chart,
+    create_rating_polarity_scatter
 )
 from src.ui_components import (
     inject_custom_css,
@@ -126,8 +130,9 @@ if filtered_df.empty:
 
 # ----------------- KPI CARDS -----------------
 kpis = AnalyticsEngine.calculate_kpis(filtered_df)
+nss = round(kpis["positive_pct"] - kpis["negative_pct"], 1)
 
-c1, c2, c3, c4, c5 = st.columns(5)
+c1, c2, c3, c4, c5, c6 = st.columns(6)
 with c1:
     render_kpi_card("Filtered Reviews", f"{kpis['total_reviews']:,}", f"From {len(df):,} total", THEME_TOKENS["accent_primary"])
 with c2:
@@ -138,114 +143,150 @@ with c4:
     render_kpi_card("Neutral", f"{kpis['neutral_count']:,}", f"{kpis['neutral_pct']}% of filtered", THEME_TOKENS["neutral_color"])
 with c5:
     render_kpi_card("Mean Polarity", f"{kpis['avg_polarity']:+.3f}", f"Avg Subj: {kpis['avg_subjectivity']:.2f}", THEME_TOKENS["accent_secondary"])
+with c6:
+    render_kpi_card("Net Sentiment (NSS)", f"{nss:+0.1f}", "Pos% minus Neg%", "#10B981" if nss >= 20 else ("#F59E0B" if nss >= 0 else "#F43F5E"))
 
 st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
-# ----------------- CHARTS ROW 1: BREAKDOWNS -----------------
-col_pie, col_bar = st.columns([1, 1])
+# ----------------- MULTI-DIMENSIONAL ANALYTICS TABS -----------------
+tab_overview, tab_aspects, tab_keywords, tab_anomalies = st.tabs([
+    "📈 Overview & Trends",
+    "🎯 Aspect Intelligence (ABSA)",
+    "🔤 Keyword & N-Gram Drivers",
+    "🛡️ Quality & Sentiment Anomalies"
+])
 
-with col_pie:
-    st.plotly_chart(create_sentiment_donut_chart(filtered_df), use_container_width=True)
+# ----------------- TAB 1: OVERVIEW & TRENDS -----------------
+with tab_overview:
+    col_pie, col_bar = st.columns([1, 1])
+    with col_pie:
+        st.plotly_chart(create_sentiment_donut_chart(filtered_df), use_container_width=True)
+    with col_bar:
+        st.plotly_chart(create_sentiment_bar_chart(filtered_df), use_container_width=True)
 
-with col_bar:
-    st.plotly_chart(create_sentiment_bar_chart(filtered_df), use_container_width=True)
+    col_hist1, col_hist2 = st.columns([1, 1])
+    with col_hist1:
+        st.plotly_chart(create_polarity_histogram(filtered_df), use_container_width=True)
+    with col_hist2:
+        st.plotly_chart(create_subjectivity_distribution(filtered_df), use_container_width=True)
 
-# ----------------- CHARTS ROW 2: DISTRIBUTIONS -----------------
-col_hist1, col_hist2 = st.columns([1, 1])
+    if cat_col and cat_col in filtered_df.columns:
+        cat_breakdown = AnalyticsEngine.get_category_breakdown(filtered_df, category_col=cat_col)
+        if cat_breakdown is not None and len(cat_breakdown) > 1:
+            st.markdown("### 🏢 Category-Level Sentiment Proportions")
+            st.plotly_chart(create_category_sentiment_chart(cat_breakdown), use_container_width=True)
 
-with col_hist1:
-    st.plotly_chart(create_polarity_histogram(filtered_df), use_container_width=True)
+    rating_col = meta.get("rating_column") or ("rating" if "rating" in df.columns else None)
+    date_col = meta.get("date_column") or ("date" if "date" in df.columns else None)
 
-with col_hist2:
-    st.plotly_chart(create_subjectivity_distribution(filtered_df), use_container_width=True)
-
-# ----------------- OPTIONAL ADVANCED CHARTS -----------------
-# 1. Category Breakdown
-if cat_col and cat_col in filtered_df.columns:
-    cat_breakdown = AnalyticsEngine.get_category_breakdown(filtered_df, category_col=cat_col)
-    if cat_breakdown is not None and len(cat_breakdown) > 1:
-        st.markdown("### 🏢 Category-Level Sentiment Proportions")
-        st.plotly_chart(create_category_sentiment_chart(cat_breakdown), use_container_width=True)
-
-# 2. Rating vs Sentiment & Timeline Trend
-rating_col = meta.get("rating_column") or ("rating" if "rating" in df.columns else None)
-date_col = meta.get("date_column") or ("date" if "date" in df.columns else None)
-
-col_r, col_t = st.columns([1, 1])
-has_rating = rating_col and rating_col in filtered_df.columns
-has_date = date_col and date_col in filtered_df.columns
-
-with col_r:
-    if has_rating:
-        r_df = AnalyticsEngine.get_rating_vs_sentiment(filtered_df, rating_col=rating_col)
-        if r_df is not None:
-            st.plotly_chart(create_rating_vs_sentiment_chart(r_df), use_container_width=True)
+    col_r, col_t = st.columns([1, 1])
+    with col_r:
+        if rating_col and rating_col in filtered_df.columns:
+            r_df = AnalyticsEngine.get_rating_vs_sentiment(filtered_df, rating_col=rating_col)
+            if r_df is not None:
+                st.plotly_chart(create_rating_vs_sentiment_chart(r_df), use_container_width=True)
+            else:
+                st.info("Insufficient star rating data to compute cross-tabulation.")
         else:
-            st.info("Insufficient star rating data to compute cross-tabulation.")
-    else:
-        st.markdown("""
-        <div style="background: rgba(30, 41, 59, 0.4); border: 1px dashed rgba(255,255,255,0.08); border-radius: 8px; padding: 30px; text-align: center; color: #94A3B8;">
-            No user star rating column configured in current dataset.
-        </div>
-        """, unsafe_allow_html=True)
+            st.markdown("<div style='background: rgba(30,41,59,0.4); padding: 20px; border-radius: 8px; text-align: center; color: #94A3B8;'>No rating field configured.</div>", unsafe_allow_html=True)
 
-with col_t:
-    if has_date:
-        t_df = AnalyticsEngine.get_timeline_trend(filtered_df, date_col=date_col)
-        if t_df is not None:
-            st.plotly_chart(create_timeline_trend_chart(t_df), use_container_width=True)
+    with col_t:
+        if date_col and date_col in filtered_df.columns:
+            t_df = AnalyticsEngine.get_timeline_trend(filtered_df, date_col=date_col)
+            if t_df is not None:
+                st.plotly_chart(create_timeline_trend_chart(t_df), use_container_width=True)
+            else:
+                st.info("Insufficient date timestamps to compute timeline trend.")
         else:
-            st.info("Insufficient date timestamps to compute timeline trend.")
-    else:
-        st.markdown("""
-        <div style="background: rgba(30, 41, 59, 0.4); border: 1px dashed rgba(255,255,255,0.08); border-radius: 8px; padding: 30px; text-align: center; color: #94A3B8;">
-            No temporal date column configured in current dataset.
-        </div>
-        """, unsafe_allow_html=True)
+            st.markdown("<div style='background: rgba(30,41,59,0.4); padding: 20px; border-radius: 8px; text-align: center; color: #94A3B8;'>No date field configured.</div>", unsafe_allow_html=True)
 
-st.markdown("---")
-
-# ----------------- EXTREMES & ANALYZER AGREEMENT -----------------
-col_ext_pos, col_ext_neg = st.columns(2)
-extremes = AnalyticsEngine.get_extreme_reviews(filtered_df, n=3, text_col=text_col)
-
-with col_ext_pos:
-    st.markdown("##### 🌟 Most Positive Reviews (Highest Polarity)")
-    pos_top = extremes["top_positive"]
-    if not pos_top.empty:
-        for _, row in pos_top.iterrows():
-            st.markdown(f"""
-            <div style="background: rgba(16, 185, 129, 0.08); border-left: 3px solid #10B981; border-radius: 6px; padding: 10px 14px; margin-bottom: 8px;">
-                <div style="font-size: 0.8rem; color: #10B981; font-weight: 600;">Polarity: {row.get('tb_polarity', 0):+.2f} | {row.get('product_name', 'Product')}</div>
-                <div style="font-size: 0.84rem; color: #F8FAFC; margin-top: 4px;">"{row.get(text_col, '')}"</div>
-            </div>
-            """, unsafe_allow_html=True)
-    else:
-        st.caption("No positive reviews available.")
-
-with col_ext_neg:
-    st.markdown("##### ⚠️ Most Critical Reviews (Lowest Polarity)")
-    neg_top = extremes["top_negative"]
-    if not neg_top.empty:
-        for _, row in neg_top.iterrows():
-            st.markdown(f"""
-            <div style="background: rgba(244, 63, 94, 0.08); border-left: 3px solid #F43F5E; border-radius: 6px; padding: 10px 14px; margin-bottom: 8px;">
-                <div style="font-size: 0.8rem; color: #F43F5E; font-weight: 600;">Polarity: {row.get('tb_polarity', 0):+.2f} | {row.get('product_name', 'Product')}</div>
-                <div style="font-size: 0.84rem; color: #F8FAFC; margin-top: 4px;">"{row.get(text_col, '')}"</div>
-            </div>
-            """, unsafe_allow_html=True)
-    else:
-        st.caption("No negative reviews available.")
-
-# Analyzer Agreement Telemetry
-agr_stats = AnalyticsEngine.get_analyzer_agreement_stats(filtered_df)
-if agr_stats.get("available"):
     st.markdown("---")
-    st.markdown("### 🤝 TextBlob & VADER Dual-Analyzer Agreement")
-    ag1, ag2, ag3 = st.columns(3)
-    with ag1:
-        st.metric("Total Compared", f"{agr_stats['total_evaluated']:,}")
-    with ag2:
-        st.metric("Consensus Matches", f"{agr_stats['agreed_count']:,} ({agr_stats['agreement_percentage']}%)")
-    with ag3:
-        st.metric("Divergent Classifications", f"{agr_stats['disagreed_count']:,}")
+    col_ext_pos, col_ext_neg = st.columns(2)
+    extremes = AnalyticsEngine.get_extreme_reviews(filtered_df, n=3, text_col=text_col)
+
+    with col_ext_pos:
+        st.markdown("##### 🌟 Most Positive Reviews")
+        pos_top = extremes["top_positive"]
+        if not pos_top.empty:
+            for _, row in pos_top.iterrows():
+                st.markdown(f"""
+                <div style="background: rgba(16, 185, 129, 0.08); border-left: 3px solid #10B981; border-radius: 6px; padding: 10px 14px; margin-bottom: 8px;">
+                    <div style="font-size: 0.8rem; color: #10B981; font-weight: 600;">Polarity: {row.get('tb_polarity', 0):+.2f} | {row.get('product_name', 'Product')}</div>
+                    <div style="font-size: 0.84rem; color: #F8FAFC; margin-top: 4px;">"{row.get(text_col, '')}"</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+    with col_ext_neg:
+        st.markdown("##### ⚠️ Most Critical Reviews")
+        neg_top = extremes["top_negative"]
+        if not neg_top.empty:
+            for _, row in neg_top.iterrows():
+                st.markdown(f"""
+                <div style="background: rgba(244, 63, 94, 0.08); border-left: 3px solid #F43F5E; border-radius: 6px; padding: 10px 14px; margin-bottom: 8px;">
+                    <div style="font-size: 0.8rem; color: #F43F5E; font-weight: 600;">Polarity: {row.get('tb_polarity', 0):+.2f} | {row.get('product_name', 'Product')}</div>
+                    <div style="font-size: 0.84rem; color: #F8FAFC; margin-top: 4px;">"{row.get(text_col, '')}"</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+    agr_stats = AnalyticsEngine.get_analyzer_agreement_stats(filtered_df)
+    if agr_stats.get("available"):
+        st.markdown("---")
+        st.markdown("### 🤝 TextBlob & VADER Dual-Analyzer Agreement")
+        ag1, ag2, ag3 = st.columns(3)
+        with ag1:
+            st.metric("Total Compared", f"{agr_stats['total_evaluated']:,}")
+        with ag2:
+            st.metric("Consensus Matches", f"{agr_stats['agreed_count']:,} ({agr_stats['agreement_percentage']}%)")
+        with ag3:
+            st.metric("Divergent Classifications", f"{agr_stats['disagreed_count']:,}")
+
+# ----------------- TAB 2: ASPECT INTELLIGENCE (ABSA) -----------------
+with tab_aspects:
+    st.markdown("### 🎯 Granular Product Aspect Telemetry")
+    aspect_df = default_aspect_engine.analyze_dataset_aspects(filtered_df, text_col=text_col)
+
+    if not aspect_df.empty:
+        st.plotly_chart(create_aspect_sentiment_chart(aspect_df), use_container_width=True)
+
+        st.markdown("##### 📋 Aspect Dimension Scorecard")
+        st.dataframe(aspect_df, use_container_width=True)
+    else:
+        st.info("No specific product aspect dimensions detected in current filtered reviews.")
+
+# ----------------- TAB 3: KEYWORD & N-GRAM DRIVERS -----------------
+with tab_keywords:
+    st.markdown("### 🔤 Customer Keyword Drivers & N-Gram Insights")
+    kw_col1, kw_col2 = st.columns(2)
+
+    with kw_col1:
+        pos_keywords = AnalyticsEngine.extract_top_keywords(filtered_df, text_col=text_col, top_n=10, sentiment_filter="Positive")
+        st.plotly_chart(create_ngram_bar_chart(pos_keywords, "Top Words in Positive Reviews", THEME_TOKENS["positive_color"]), use_container_width=True)
+
+    with kw_col2:
+        neg_keywords = AnalyticsEngine.extract_top_keywords(filtered_df, text_col=text_col, top_n=10, sentiment_filter="Negative")
+        st.plotly_chart(create_ngram_bar_chart(neg_keywords, "Top Words in Negative Reviews", THEME_TOKENS["negative_color"]), use_container_width=True)
+
+    st.markdown("##### 🔗 Common Customer Bigrams (Two-Word Phrases)")
+    bigrams = AnalyticsEngine.extract_ngrams(filtered_df, n=2, top_k=10, text_col=text_col)
+    st.plotly_chart(create_ngram_bar_chart(bigrams, "Most Frequent Bigram Phrases", THEME_TOKENS["accent_primary"]), use_container_width=True)
+
+# ----------------- TAB 4: QUALITY & ANOMALIES -----------------
+with tab_anomalies:
+    st.markdown("### 🛡️ Dataset Health & Sentiment Anomaly Suite")
+    
+    rating_col = meta.get("rating_column") or ("rating" if "rating" in df.columns else None)
+    if rating_col and rating_col in filtered_df.columns:
+        anomalies_df = AnalyticsEngine.detect_sentiment_anomalies(filtered_df, rating_col=rating_col)
+        
+        st.plotly_chart(create_rating_polarity_scatter(filtered_df, rating_col=rating_col), use_container_width=True)
+
+        if not anomalies_df.empty:
+            st.warning(f"⚠️ Detected **{len(anomalies_df)} sentiment rating anomalies** (reviews where star ratings contradict textual sentiment).")
+            st.dataframe(
+                anomalies_df[["product_name", rating_col, "tb_polarity", "tb_sentiment", "anomaly_type", text_col]].head(15),
+                use_container_width=True
+            )
+        else:
+            st.success("✓ No rating-sentiment contradictions detected in this dataset.")
+    else:
+        st.info("Anomaly detection requires a star rating column.")

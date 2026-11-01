@@ -85,3 +85,4 @@ NEGATION_WORDS: frozenset = frozenset([
     "won't", "wouldn't", "shouldn't", "couldn't", "isn't", "aren't",
     "wasn't", "weren't", "hasn't", "haven't", "hadn't", "without"
 ])
+

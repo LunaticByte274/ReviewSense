@@ -22,6 +22,7 @@ from src.data_manager import (
     sanitize_dataframe_for_export
 )
 from src.analytics import AnalyticsEngine
+from src.report_generator import ReportGenerator
 from src.nlp_engine import default_nlp_engine
 from src.visualizations import create_sentiment_donut_chart, create_sentiment_bar_chart
 from src.ui_components import (
@@ -212,15 +213,15 @@ if active_df is not None:
     st.dataframe(active_df.head(10), use_container_width=True)
 
     # Export options with Formula Injection protection
-    st.markdown("##### 📥 Export Intelligence")
-    col_dl1, col_dl2 = st.columns(2)
+    st.markdown("##### 📥 Export Intelligence & Executive Reports")
+    col_dl1, col_dl2, col_dl3 = st.columns(3)
 
     with col_dl1:
         # Full Export
         safe_export_df = sanitize_dataframe_for_export(active_df)
         csv_buffer = safe_export_df.to_csv(index=False).encode("utf-8")
         st.download_button(
-            label="💾 Download Full Processed CSV (With NLP Columns)",
+            label="💾 Download Full Processed CSV",
             data=csv_buffer,
             file_name=f"ReviewSense_Processed_{active_meta.get('filename', 'dataset')}.csv",
             mime="text/csv",
@@ -235,11 +236,43 @@ if active_df is not None:
             safe_neg_df = sanitize_dataframe_for_export(neg_df)
             neg_csv_buffer = safe_neg_df.to_csv(index=False).encode("utf-8")
             st.download_button(
-                label=f"🚨 Export Negative Reviews ({len(neg_df):,} records for Triage)",
+                label=f"🚨 Export Negative Triage ({len(neg_df):,} Rows)",
                 data=neg_csv_buffer,
                 file_name=f"ReviewSense_Negative_Triage_{active_meta.get('filename', 'dataset')}.csv",
                 mime="text/csv",
                 use_container_width=True
             )
         else:
-            st.info("No negative reviews detected in current dataset.")
+            st.info("No negative reviews detected.")
+
+    with col_dl3:
+        # Executive Styled HTML Report
+        text_col = active_meta.get("text_column", "review_text")
+        html_report = ReportGenerator.generate_html_report(active_df, active_meta, text_col=text_col)
+        st.download_button(
+            label="📄 Download Executive HTML Report",
+            data=html_report.encode("utf-8"),
+            file_name=f"ReviewSense_Executive_Report_{active_meta.get('filename', 'dataset')}.html",
+            mime="text/html",
+            use_container_width=True,
+            help="Generates an executive-ready HTML report with Net Sentiment Score, aspect intelligence, and top customer quotes ready for printing or presentation."
+        )
+
+    # ----------------- ENHANCEMENT: DATASET BENCHMARK COMPARISON -----------------
+    if not active_meta.get("is_demo", False):
+        st.markdown("---")
+        with st.expander("⚖️ Multi-Dataset Comparison (Your Upload vs. Baseline Benchmark Dataset)"):
+            demo_df, demo_meta = DataManager.load_demonstration_data()
+            demo_kpis = AnalyticsEngine.calculate_kpis(demo_df)
+            demo_nss = round(demo_kpis["positive_pct"] - demo_kpis["negative_pct"], 1)
+            active_nss = round(kpis["positive_pct"] - kpis["negative_pct"], 1)
+
+            cmp_c1, cmp_c2, cmp_c3, cmp_c4 = st.columns(4)
+            with cmp_c1:
+                st.metric("Total Review Volume", f"{kpis['total_reviews']:,}", delta=f"{kpis['total_reviews'] - demo_kpis['total_reviews']:+d} vs demo")
+            with cmp_c2:
+                st.metric("Positive Sentiment %", f"{kpis['positive_pct']}%", delta=f"{kpis['positive_pct'] - demo_kpis['positive_pct']:+.1f}%")
+            with cmp_c3:
+                st.metric("Negative Sentiment %", f"{kpis['negative_pct']}%", delta=f"{kpis['negative_pct'] - demo_kpis['negative_pct']:+.1f}%", delta_color="inverse")
+            with cmp_c4:
+                st.metric("Net Sentiment Score (NSS)", f"{active_nss:+0.1f}", delta=f"{active_nss - demo_nss:+.1f}")

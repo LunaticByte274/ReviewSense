@@ -402,3 +402,114 @@ def create_polarity_gauge(polarity: float) -> go.Figure:
         margin=dict(l=25, r=25, t=25, b=10)
     )
     return fig
+
+
+def create_aspect_sentiment_chart(aspect_df: pd.DataFrame) -> go.Figure:
+    """Creates a horizontal comparison bar chart of positive vs negative sentiment per aspect."""
+    if aspect_df is None or aspect_df.empty:
+        fig = go.Figure()
+        fig.update_layout(**CHART_LAYOUT_DEFAULTS)
+        return fig
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        y=aspect_df["aspect"],
+        x=aspect_df["positive_count"],
+        name="Positive Mentions",
+        orientation="h",
+        marker=dict(color=THEME_TOKENS["positive_color"]),
+        hovertemplate="%{y}<br>Positive: %{x}<extra></extra>"
+    ))
+    fig.add_trace(go.Bar(
+        y=aspect_df["aspect"],
+        x=aspect_df["negative_count"],
+        name="Negative Mentions",
+        orientation="h",
+        marker=dict(color=THEME_TOKENS["negative_color"]),
+        hovertemplate="%{y}<br>Negative: %{x}<extra></extra>"
+    ))
+
+    fig.update_layout(
+        **CHART_LAYOUT_DEFAULTS,
+        barmode="group",
+        title=dict(text="<b>Aspect Dimension Mentions: Positive vs. Negative</b>", font=dict(size=15)),
+        xaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.06)", title="Mention Count"),
+        yaxis=dict(autorange="reversed", showgrid=False),
+        height=360
+    )
+    return fig
+
+
+def create_ngram_bar_chart(ngram_tuples: list, title: str, bar_color: str) -> go.Figure:
+    """Displays top keyword / N-gram frequency bar chart."""
+    if not ngram_tuples:
+        fig = go.Figure()
+        fig.update_layout(**CHART_LAYOUT_DEFAULTS)
+        return fig
+
+    labels = [t[0] for t in reversed(ngram_tuples)]
+    counts = [t[1] for t in reversed(ngram_tuples)]
+
+    fig = go.Figure(go.Bar(
+        y=labels,
+        x=counts,
+        orientation="h",
+        marker=dict(color=bar_color, line=dict(color="rgba(255,255,255,0.1)", width=1)),
+        text=counts,
+        textposition="auto"
+    ))
+
+    fig.update_layout(
+        **CHART_LAYOUT_DEFAULTS,
+        title=dict(text=f"<b>{title}</b>", font=dict(size=14)),
+        xaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,0.06)", title="Occurrences"),
+        yaxis=dict(showgrid=False),
+        height=320
+    )
+    return fig
+
+
+def create_rating_polarity_scatter(df: pd.DataFrame, rating_col: str = "rating", pol_col: str = "tb_polarity") -> go.Figure:
+    """Scatter chart of Star Rating vs Polarity with anomaly boundaries."""
+    if df is None or df.empty or rating_col not in df.columns or pol_col not in df.columns:
+        fig = go.Figure()
+        fig.update_layout(**CHART_LAYOUT_DEFAULTS)
+        return fig
+
+    work_df = df.copy()
+    work_df["num_rating"] = pd.to_numeric(work_df[rating_col], errors="coerce")
+    clean = work_df.dropna(subset=["num_rating", pol_col])
+
+    # Add jitter to rating to avoid severe point overlap
+    jitter = np.random.uniform(-0.15, 0.15, size=len(clean))
+    jittered_rating = clean["num_rating"] + jitter
+
+    # Detect anomalies for coloring
+    colors = []
+    for _, row in clean.iterrows():
+        r = row["num_rating"]
+        p = row[pol_col]
+        if (r >= 4 and p < -0.05) or (r <= 2 and p > 0.05):
+            colors.append("#F43F5E")  # Anomaly Red
+        else:
+            colors.append(THEME_TOKENS["accent_primary"])
+
+    fig = go.Figure(go.Scatter(
+        x=jittered_rating,
+        y=clean[pol_col],
+        mode="markers",
+        marker=dict(size=8, color=colors, opacity=0.75, line=dict(color="rgba(255,255,255,0.2)", width=1)),
+        hovertemplate="Rating: %{customdata[0]}<br>Polarity: %{y:+.2f}<extra></extra>",
+        customdata=clean[["num_rating"]].values
+    ))
+
+    fig.update_layout(
+        **CHART_LAYOUT_DEFAULTS,
+        title=dict(text="<b>Star Rating vs. NLP Polarity (Red = Anomaly)</b>", font=dict(size=14)),
+        xaxis=dict(title="User Star Rating (1 to 5)", showgrid=True, gridcolor="rgba(255,255,255,0.06)", range=[0.5, 5.5]),
+        yaxis=dict(title="Polarity Score", range=[-1.05, 1.05], showgrid=True, gridcolor="rgba(255,255,255,0.06)"),
+        height=320
+    )
+    return fig
+
+

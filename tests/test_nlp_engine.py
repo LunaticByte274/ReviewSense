@@ -74,3 +74,4 @@ def test_subjectivity_bounds():
     assert 0.0 <= res1.subjectivity <= 1.0
     assert 0.0 <= res2.subjectivity <= 1.0
     assert res2.subjectivity > res1.subjectivity
+
