@@ -167,3 +167,4 @@ if prompt_to_process:
     # Append assistant message to history
     st.session_state["copilot_messages"].append({"role": "assistant", "content": response})
     st.rerun()
+

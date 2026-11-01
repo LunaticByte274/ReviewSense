@@ -83,3 +83,4 @@ def test_copilot_tuple_input_handling(copilot_fixture_df):
     # Handle tuple if caller passed (df, metadata)
     resp = copilot.process_query("What is our Net Sentiment Score?", df=(copilot_fixture_df, {}))
     assert "Executive Sentiment Health" in resp
+
