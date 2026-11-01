@@ -32,3 +32,4 @@ def test_html_report_generation():
     assert "Net Sentiment Score" in html
     assert "ZenBook Pro" in html
     assert "Performance & Speed" in html or "Customer Support" in html
+

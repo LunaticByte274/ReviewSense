@@ -19,7 +19,11 @@ from src.config import AppConfig, THEME_TOKENS
 from src.data_manager import DataManager
 from src.analytics import AnalyticsEngine
 from src.aspect_engine import default_aspect_engine
-from src.visualizations import create_sentiment_donut_chart, create_sentiment_bar_chart
+from src.visualizations import (
+    create_sentiment_donut_chart,
+    create_sentiment_bar_chart,
+    create_aspect_radar_chart
+)
 from src.ui_components import (
     inject_custom_css,
     render_sidebar,
@@ -128,9 +132,43 @@ with col_chart_1:
 with col_chart_2:
     st.plotly_chart(create_sentiment_bar_chart(df), use_container_width=True)
 
-# Aspect Intelligence Summary Callout
+# ----------------- ENHANCEMENT: AUTOMATED EXECUTIVE TAKEAWAYS -----------------
 text_col = meta.get("text_column", "review_text")
 aspect_df = default_aspect_engine.analyze_dataset_aspects(df, text_col=text_col)
+rating_col = meta.get("rating_column", "rating")
+anomalies_df = AnalyticsEngine.detect_sentiment_anomalies(df, rating_col=rating_col) if rating_col in df.columns else None
+
+insights = AnalyticsEngine.generate_executive_insights(df, kpis, aspect_df=aspect_df, anomalies_df=anomalies_df)
+
+st.markdown("### 💡 Automated Executive Takeaways & CX Strategy")
+ins_cols = st.columns(len(insights))
+for idx, ins in enumerate(insights):
+    border_color = (
+        "#10B981" if ins["type"] == "positive"
+        else ("#F43F5E" if ins["type"] == "negative"
+        else ("#F59E0B" if ins["type"] == "warning" else "#6366F1"))
+    )
+    with ins_cols[idx]:
+        st.markdown(f"""
+        <div style="background: rgba(22, 30, 46, 0.75); border: 1px solid rgba(255,255,255,0.08); border-top: 3px solid {border_color}; border-radius: 10px; padding: 16px; height: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
+            <div style="font-size: 0.72rem; color: #94A3B8; font-weight: 700; text-transform: uppercase;">{ins['category']}</div>
+            <div style="font-size: 0.95rem; font-weight: 700; color: #F8FAFC; margin: 4px 0 6px 0;">{ins['title']}</div>
+            <div style="font-size: 0.8rem; color: #CBD5E1; line-height: 1.4;">{ins['description']}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+# Aspect Radar Chart Section
+if not aspect_df.empty:
+    with st.expander("🕸️ View 8-Axis Aspect Dimension Radar Chart"):
+        r_col1, r_col2 = st.columns([1, 1])
+        with r_col1:
+            st.plotly_chart(create_aspect_radar_chart(aspect_df), use_container_width=True)
+        with r_col2:
+            st.markdown("##### 📋 Dimension Performance Summary")
+            st.markdown("The 8-axis radar chart models customer satisfaction percentages across discrete product engineering dimensions.")
+            st.dataframe(aspect_df[["aspect", "total_mentions", "positive_rate", "net_aspect_score"]], use_container_width=True)
+
+# Aspect Intelligence Summary Callout
 if not aspect_df.empty:
     best_aspect = aspect_df.sort_values(by="net_aspect_score", ascending=False).iloc[0]
     worst_aspect = aspect_df.sort_values(by="net_aspect_score", ascending=True).iloc[0]

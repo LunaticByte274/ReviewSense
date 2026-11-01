@@ -248,3 +248,4 @@ class ReportGenerator:
 </html>
         """
         return html_content
+

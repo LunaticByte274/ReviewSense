@@ -71,10 +71,31 @@ SAMPLE_PRESETS = {
     )
 }
 
+# ----------------- ENHANCEMENT: ONE-CLICK QUICK INJECT PILLS -----------------
+st.markdown("##### ⚡ Instant One-Click Test Scenarios")
+pill_c1, pill_c2, pill_c3, pill_c4, pill_c5 = st.columns(5)
+quick_injected = None
+
+with pill_c1:
+    if st.button("🎧 Noise Cancelling", use_container_width=True, help="Load strongly positive audio review"):
+        quick_injected = SAMPLE_PRESETS["Strongly Positive Review (Audio)"]
+with pill_c2:
+    if st.button("⚡ Battery Drain", use_container_width=True, help="Load negative battery complaint"):
+        quick_injected = "The battery drains 50% in two hours. Overheats constantly and shuts down without warning!"
+with pill_c3:
+    if st.button("⚖️ Mixed Opinion", use_container_width=True, help="Load mixed laptop review"):
+        quick_injected = SAMPLE_PRESETS["Complex Mixed Opinion (Computing)"]
+with pill_c4:
+    if st.button("📦 Neutral Specs", use_container_width=True, help="Load objective specs statement"):
+        quick_injected = SAMPLE_PRESETS["Objective Neutral Review (Specifications)"]
+with pill_c5:
+    if st.button("🛡️ Negation Test", use_container_width=True, help="Load negation phrase"):
+        quick_injected = SAMPLE_PRESETS["Negation Nuance (Kitchenware)"]
+
 col_input_left, col_input_right = st.columns([3, 1])
 
 with col_input_right:
-    st.markdown("##### 💡 Load Preset Example")
+    st.markdown("##### 💡 Preset Selector")
     selected_preset = st.selectbox(
         "Choose an illustrative example:",
         options=list(SAMPLE_PRESETS.keys()),
@@ -82,7 +103,12 @@ with col_input_right:
         label_visibility="collapsed"
     )
 
-default_text = SAMPLE_PRESETS.get(selected_preset, "") if selected_preset != "Select an example review..." else ""
+if quick_injected:
+    default_text = quick_injected
+elif selected_preset != "Select an example review...":
+    default_text = SAMPLE_PRESETS.get(selected_preset, "")
+else:
+    default_text = ""
 
 with col_input_left:
     user_review = st.text_area(
@@ -207,6 +233,26 @@ if analyze_btn or (user_review and selected_preset != "Select an example review.
                         <div style="font-size: 0.76rem; color: #CBD5E1; font-style: italic;">"{asp_data['snippet'][:75]}..."</div>
                     </div>
                     """, unsafe_allow_html=True)
+
+        # ----------------- ENHANCEMENT: SENTENCE-BY-SENTENCE DISCOURSE MAP -----------------
+        import re
+        sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", user_review) if s.strip()]
+        if len(sentences) > 1:
+            st.markdown("##### 📑 Multi-Sentence Discourse Map")
+            sentence_pills = ""
+            for s_idx, sent_text in enumerate(sentences):
+                s_res = default_nlp_engine.analyze(sent_text, include_vader=False)
+                sent_color = (
+                    THEME_TOKENS["positive_color"] if s_res.sentiment == "Positive"
+                    else (THEME_TOKENS["negative_color"] if s_res.sentiment == "Negative" else THEME_TOKENS["neutral_color"])
+                )
+                sentence_pills += f"""
+                <div style="background: rgba(22, 30, 46, 0.85); border-left: 3px solid {sent_color}; border-radius: 6px; padding: 8px 12px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                    <span style="font-size: 0.84rem; color: #F8FAFC;">{sent_text}</span>
+                    <span style="font-size: 0.75rem; font-weight: 700; color: {sent_color}; background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px; white-space: nowrap;">{s_res.sentiment} ({s_res.polarity:+.2f})</span>
+                </div>
+                """
+            st.markdown(sentence_pills, unsafe_allow_html=True)
 
         # ----------------- ENHANCEMENT: LINGUISTIC INTENSITY & CONTRAST -----------------
         has_contrast = any(w in user_review.lower().split() for w in ["but", "however", "although", "yet", "though"])

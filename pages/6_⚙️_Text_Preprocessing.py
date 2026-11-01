@@ -212,3 +212,33 @@ for word, tag in pos_tags:
 
 st.markdown(f"<div style='background: #1E293B; border-radius: 8px; padding: 16px; border: 1px solid rgba(255,255,255,0.08);'>{pos_pills_html}</div>", unsafe_allow_html=True)
 
+# ----------------- ENHANCEMENT: INTERACTIVE VISUAL DIFF VIEWER -----------------
+st.markdown("---")
+st.markdown("### 🔍 Preprocessing Word-Level Diff Visualizer")
+st.markdown("See exactly which tokens are removed, modified, or preserved:")
+
+orig_words = input_text.split()
+cleaned_words_set = set(smart_clean.lower().split())
+
+diff_pills = ""
+for w in orig_words:
+    clean_w = w.lower().strip(".,!?\"'();:")
+    if clean_w in cleaned_words_set:
+        if clean_w in NEGATION_WORDS:
+            diff_pills += f'<span style="background: rgba(16, 185, 129, 0.25); border: 1px solid #10B981; color: #6EE7B7; padding: 3px 8px; border-radius: 4px; margin: 2px; font-weight: 700;">{w} (Protected Negation)</span> '
+        else:
+            diff_pills += f'<span style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); color: #E2E8F0; padding: 3px 8px; border-radius: 4px; margin: 2px;">{w}</span> '
+    else:
+        diff_pills += f'<span style="background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.3); color: #F43F5E; text-decoration: line-through; padding: 3px 8px; border-radius: 4px; margin: 2px;">{w}</span> '
+
+st.markdown(f"""
+<div style="background: #1E293B; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 18px; line-height: 2.2;">
+    {diff_pills}
+</div>
+<div style="font-size: 0.75rem; color: #94A3B8; margin-top: 6px; display: flex; gap: 16px;">
+    <span><span style="color: #6EE7B7;">■</span> Green: Protected Negations</span>
+    <span><span style="color: #E2E8F0;">■</span> Blue: Retained Content</span>
+    <span><span style="color: #F43F5E;">■</span> Red Strikethrough: Filtered Noise/Stopword</span>
+</div>
+""", unsafe_allow_html=True)
+

@@ -267,3 +267,96 @@ with tab_viva:
     for q, a in viva_qas:
         with st.expander(f"📌 {q}"):
             st.markdown(a)
+
+    # ----------------- ENHANCEMENT: INTERACTIVE VIVA DEFENSE QUIZ -----------------
+    st.markdown("---")
+    st.markdown("### 🎯 Interactive Academic Viva Defense Quiz")
+    st.markdown("Test your theoretical and empirical mastery of NLP sentiment analysis before faculty evaluation:")
+
+    with st.form("viva_quiz_form"):
+        q1_ans = st.radio(
+            "1. What is the consequence of naive stopword removal on the review: 'This camera is not good'?",
+            [
+                "Removes 'camera', leaving only sentiment adjectives",
+                "Removes negation 'not', inverting sentiment from Negative to Positive",
+                "Has no effect on TextBlob polarity",
+                "Increases model accuracy by reducing noise dimensionality"
+            ],
+            index=None
+        )
+
+        q2_ans = st.radio(
+            "2. How does VADER differ fundamentally from TextBlob?",
+            [
+                "VADER only supports Spanish and French corpora",
+                "VADER is a transformer neural network while TextBlob is a database",
+                "VADER incorporates grammatical heuristics (capitalization, exclamation marks, negation scope) tuned for social text",
+                "VADER measures only subjectivity, while TextBlob measures only polarity"
+            ],
+            index=None
+        )
+
+        q3_ans = st.radio(
+            "3. Why is a corridor threshold [-0.05, +0.05] preferred over a zero boundary (0.0)?",
+            [
+                "To prevent lexical noise and small non-zero float fluctuations from misclassifying neutral text",
+                "Because floating-point numbers cannot represent zero in Python",
+                "To artificially inflate accuracy metrics",
+                "Because Streamlit does not allow zero thresholds"
+            ],
+            index=None
+        )
+
+        q4_ans = st.radio(
+            "4. What security vulnerability does prepending an apostrophe (') during CSV export mitigate?",
+            [
+                "SQL Injection attack",
+                "Cross-Site Scripting (XSS)",
+                "OWASP CSV Formula Injection in spreadsheet tools (Excel / Sheets)",
+                "Buffer Overflow vulnerability"
+            ],
+            index=None
+        )
+
+        submit_quiz = st.form_submit_button("🎓 Grade My Viva Defense Answers", type="primary")
+
+    if submit_quiz:
+        score = 0
+        total_q = 4
+
+        # Question 1 Check
+        if q1_ans == "Removes negation 'not', inverting sentiment from Negative to Positive":
+            score += 1
+            st.success("✓ Q1 Correct! Indiscriminate stopword removal deletes 'not', causing polarity inversion.")
+        else:
+            st.error("✗ Q1 Incorrect: The correct answer is: Removes negation 'not', inverting sentiment from Negative to Positive.")
+
+        # Question 2 Check
+        if q2_ans == "VADER incorporates grammatical heuristics (capitalization, exclamation marks, negation scope) tuned for social text":
+            score += 1
+            st.success("✓ Q2 Correct! VADER explicitly scores valence modifiers, ALL-CAPS emphasis, and exclamation marks.")
+        else:
+            st.error("✗ Q2 Incorrect: The correct answer is: VADER incorporates grammatical heuristics (capitalization, exclamation marks, negation scope) tuned for social text.")
+
+        # Question 3 Check
+        if q3_ans == "To prevent lexical noise and small non-zero float fluctuations from misclassifying neutral text":
+            score += 1
+            st.success("✓ Q3 Correct! The corridor [-0.05, 0.05] filters out slight lexical noise in neutral statements.")
+        else:
+            st.error("✗ Q3 Incorrect: The correct answer is: To prevent lexical noise and small non-zero float fluctuations from misclassifying neutral text.")
+
+        # Question 4 Check
+        if q4_ans == "OWASP CSV Formula Injection in spreadsheet tools (Excel / Sheets)":
+            score += 1
+            st.success("✓ Q4 Correct! Prepending an apostrophe neutralizes formula symbols (=, +, -, @) in exported CSVs.")
+        else:
+            st.error("✗ Q4 Incorrect: The correct answer is: OWASP CSV Formula Injection in spreadsheet tools (Excel / Sheets).")
+
+        st.markdown(f"### 🏆 Final Viva Score: **{score} / {total_q}** ({int(score/total_q*100)}%)")
+        if score == total_q:
+            st.balloons()
+            st.success("🌟 Outstanding! You are fully prepared to defend ReviewSense with top marks!")
+        elif score >= 2:
+            st.info("Good effort! Review the theoretical formulations above to achieve a perfect viva score.")
+        else:
+            st.warning("Review the Viva Voce expanders above to strengthen your answers.")

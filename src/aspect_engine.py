@@ -157,3 +157,4 @@ class AspectEngine:
 
 # Global instance
 default_aspect_engine = AspectEngine()
+

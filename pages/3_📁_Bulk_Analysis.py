@@ -51,6 +51,33 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# ----------------- ENHANCEMENT: SAMPLE TEMPLATE DOWNLOAD CALLOUT -----------------
+with st.expander("📥 Need Sample Data to Test? Download Ready-to-Use Templates", expanded=False):
+    st.markdown("""
+    Don't have a dataset ready? You can download our curated demonstration dataset or a blank template formatted specifically for ReviewSense:
+    """)
+    t_col1, t_col2 = st.columns(2)
+    with t_col1:
+        from src.config import SAMPLE_REVIEWS_CSV
+        if SAMPLE_REVIEWS_CSV.exists():
+            with open(SAMPLE_REVIEWS_CSV, "rb") as f:
+                st.download_button(
+                    label="📊 Download Ready-to-Test 50-Review Dataset (CSV)",
+                    data=f.read(),
+                    file_name="ReviewSense_Test_Dataset.csv",
+                    mime="text/csv",
+                    use_container_width=True
+                )
+    with t_col2:
+        template_csv = "review_id,product_name,category,rating,date,review_text\nREV-001,Example Gadget,Electronics,5,2025-01-01,Fantastic performance and battery life!\n"
+        st.download_button(
+            label="📝 Download Blank Review Template (CSV)",
+            data=template_csv.encode("utf-8"),
+            file_name="ReviewSense_Blank_Template.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
+
 # Step 1: File Upload
 st.markdown("### 📤 Step 1: Upload Dataset")
 uploaded_file = st.file_uploader(

@@ -41,3 +41,4 @@ def test_aspect_dataset_aggregation():
     assert disp_row["total_mentions"] == 2
     assert disp_row["positive_count"] == 1
     assert disp_row["negative_count"] == 1
+

@@ -513,3 +513,52 @@ def create_rating_polarity_scatter(df: pd.DataFrame, rating_col: str = "rating",
     return fig
 
 
+def create_aspect_radar_chart(aspect_df: pd.DataFrame) -> go.Figure:
+    """Generates an 8-axis Polar Spider / Radar chart of Net Aspect Scores."""
+    if aspect_df is None or aspect_df.empty:
+        fig = go.Figure()
+        fig.update_layout(**CHART_LAYOUT_DEFAULTS)
+        return fig
+
+    categories = list(aspect_df["aspect"])
+    values = list(aspect_df["positive_rate"])
+    
+    # Close the radar polygon
+    categories_closed = categories + [categories[0]]
+    values_closed = values + [values[0]]
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatterpolar(
+        r=values_closed,
+        theta=categories_closed,
+        fill="toself",
+        fillcolor="rgba(99, 102, 241, 0.25)",
+        line=dict(color=THEME_TOKENS["accent_primary"], width=2),
+        name="Positive Rate %"
+    ))
+
+    fig.update_layout(
+        **CHART_LAYOUT_DEFAULTS,
+        polar=dict(
+            radialaxis=dict(
+                visible=True,
+                range=[0, 100],
+                showticklabels=True,
+                ticksuffix="%",
+                gridcolor="rgba(255,255,255,0.08)",
+                linecolor="rgba(255,255,255,0.1)"
+            ),
+            angularaxis=dict(
+                gridcolor="rgba(255,255,255,0.08)",
+                linecolor="rgba(255,255,255,0.1)"
+            ),
+            bgcolor="rgba(0,0,0,0)"
+        ),
+        title=dict(text="<b>Aspect Dimension Performance (Positive %)</b>", font=dict(size=15)),
+        height=360,
+        showlegend=False
+    )
+    return fig
+
+
+

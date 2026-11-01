@@ -47,13 +47,42 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# ----------------- ENHANCEMENT: QUICK FILTER CHIPS -----------------
+st.markdown("##### ⚡ Quick Lens Presets")
+q1, q2, q3, q4, q5 = st.columns(5)
+quick_filter = st.session_state.get("explorer_quick_filter", "All")
+
+with q1:
+    if st.button("🔥 All Reviews", use_container_width=True):
+        st.session_state["explorer_quick_filter"] = "All"
+        st.rerun()
+with q2:
+    if st.button("🌟 Top Praises", use_container_width=True):
+        st.session_state["explorer_quick_filter"] = "Positive"
+        st.rerun()
+with q3:
+    if st.button("🚨 Critical Complaints", use_container_width=True):
+        st.session_state["explorer_quick_filter"] = "Negative"
+        st.rerun()
+with q4:
+    if st.button("⚠️ Rating Mismatches", use_container_width=True):
+        st.session_state["explorer_quick_filter"] = "Anomalies"
+        st.rerun()
+with q5:
+    if st.button("🔋 Battery Issues", use_container_width=True):
+        st.session_state["explorer_quick_filter"] = "Battery"
+        st.rerun()
+
 # ----------------- FILTER CONTROLS -----------------
 with st.container():
     f_col1, f_col2, f_col3, f_col4 = st.columns(4)
 
     with f_col1:
         sentiment_opts = ["All", "Positive", "Negative", "Neutral"]
-        selected_sent = st.selectbox("Sentiment Filter:", sentiment_opts, index=0)
+        default_sent_idx = 0
+        if quick_filter in ["Positive", "Negative", "Neutral"]:
+            default_sent_idx = sentiment_opts.index(quick_filter)
+        selected_sent = st.selectbox("Sentiment Filter:", sentiment_opts, index=default_sent_idx)
 
     with f_col2:
         cat_col = meta.get("category_column") or ("category" if "category" in df.columns else None)
@@ -65,7 +94,8 @@ with st.container():
             st.selectbox("Category Filter:", ["All (N/A)"], disabled=True)
 
     with f_col3:
-        search_query = st.text_input("Search Text Content:", placeholder="Keyword (e.g., battery, sound)...")
+        initial_search = "battery" if quick_filter == "Battery" else ""
+        search_query = st.text_input("Search Text Content:", value=initial_search, placeholder="Keyword (e.g., battery, sound)...")
 
     with f_col4:
         sort_options = {
@@ -84,12 +114,14 @@ with st.container():
     f2_col1, f2_col2, f2_col3 = st.columns([1.5, 1.5, 1])
     with f2_col1:
         aspect_filter_opts = ["All Aspects"] + list(PRODUCT_ASPECTS.keys())
-        selected_aspect = st.selectbox("Filter by Mentioned Aspect:", aspect_filter_opts, index=0)
+        default_asp_idx = aspect_filter_opts.index("Battery & Power") if quick_filter == "Battery" else 0
+        selected_aspect = st.selectbox("Filter by Mentioned Aspect:", aspect_filter_opts, index=default_asp_idx)
     with f2_col2:
         pol_bounds = st.slider("Polarity Range:", -1.0, 1.0, (-1.0, 1.0), 0.05)
     with f2_col3:
         sub_bounds = st.slider("Subjectivity Range:", 0.0, 1.0, (0.0, 1.0), 0.05)
-        only_anomalies = st.checkbox("Show Rating Mismatches Only", value=False, help="Filters reviews where star rating contradicts textual polarity (e.g. 5-star negative or 1-star positive).")
+        default_anom_val = (quick_filter == "Anomalies")
+        only_anomalies = st.checkbox("Show Rating Mismatches Only", value=default_anom_val, help="Filters reviews where star rating contradicts textual polarity (e.g. 5-star negative or 1-star positive).")
 
 # Apply Filters
 exp_df = df.copy()

@@ -342,6 +342,91 @@ class AnalyticsEngine:
         return ngram_counts.most_common(top_k)
 
     @staticmethod
+    def generate_executive_insights(
+        df: pd.DataFrame,
+        kpis: Dict[str, Any],
+        aspect_df: Optional[pd.DataFrame] = None,
+        anomalies_df: Optional[pd.DataFrame] = None
+    ) -> List[Dict[str, str]]:
+        """
+        Synthesizes automated, deterministic natural language executive takeaways
+        and operational recommendations based on aggregated telemetry.
+        """
+        insights = []
+        nss = round(kpis["positive_pct"] - kpis["negative_pct"], 1)
+
+        # 1. Overall Brand & Product Health Verdict
+        if nss >= 35:
+            verdict = "Exceptional Customer Sentiment & Organic Advocacy"
+            desc = (
+                f"With a Net Sentiment Score of {nss:+0.1f} and a {kpis['positive_pct']}% positive ratio, "
+                f"customer feedback indicates strong product-market fit and high brand loyalty."
+            )
+            v_type = "positive"
+        elif nss >= 10:
+            verdict = "Moderate Positive Momentum with Targeted Vulnerabilities"
+            desc = (
+                f"Net Sentiment Score stands at {nss:+0.1f}. While the majority of reviews are favorable, "
+                f"{kpis['negative_pct']}% negative feedback highlights specific points of customer friction."
+            )
+            v_type = "neutral"
+        else:
+            verdict = "Elevated Customer Churn Risk & Critical Defect Alert"
+            desc = (
+                f"Net Sentiment Score is subdued at {nss:+0.1f} ({kpis['negative_pct']}% negative reviews). "
+                f"Urgent operational investigation is recommended to address quality or delivery defects."
+            )
+            v_type = "negative"
+
+        insights.append({
+            "category": "Executive Verdict",
+            "title": verdict,
+            "description": desc,
+            "type": v_type
+        })
+
+        # 2. Key Aspect Insights
+        if aspect_df is not None and not aspect_df.empty:
+            top_praised = aspect_df.sort_values(by="net_aspect_score", ascending=False).iloc[0]
+            top_issue = aspect_df.sort_values(by="net_aspect_score", ascending=True).iloc[0]
+
+            if top_praised["net_aspect_score"] > 0:
+                insights.append({
+                    "category": "Core Product Strength",
+                    "title": f"Differentiating Delight: {top_praised['aspect']}",
+                    "description": (
+                        f"Customers frequently praise {top_praised['aspect']} ({top_praised['positive_rate']}% positive "
+                        f"across {top_praised['total_mentions']} mentions). Highlight this attribute in marketing campaigns."
+                    ),
+                    "type": "positive"
+                })
+
+            if top_issue["net_aspect_score"] < 25:
+                insights.append({
+                    "category": "Critical Product Vulnerability",
+                    "title": f"Primary Customer Friction: {top_issue['aspect']}",
+                    "description": (
+                        f"{top_issue['aspect']} registered {top_issue['negative_rate']}% negative feedback. "
+                        f"Prioritize hardware/software investigation on this dimension to prevent further brand erosion."
+                    ),
+                    "type": "negative"
+                })
+
+        # 3. Anomaly & Sarcasm Alerts
+        if anomalies_df is not None and not anomalies_df.empty:
+            insights.append({
+                "category": "Customer Voice Quality Alert",
+                "title": f"Detected {len(anomalies_df)} Star-Sentiment Inconsistencies",
+                "description": (
+                    "Reviews where customer star ratings directly conflict with textual polarity indicate either "
+                    "heavy sarcasm, customer misclicks, or bot-generated anomalies. Review these in the Anomaly Suite."
+                ),
+                "type": "warning"
+            })
+
+        return insights
+
+    @staticmethod
     def evaluate_model_on_ground_truth(
         eval_df: pd.DataFrame,
         ground_truth_col: str = "true_sentiment",
