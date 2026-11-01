@@ -4,6 +4,17 @@ Initializes global application state, design system CSS, active session data,
 and renders the executive home landing dashboard.
 """
 
+import sys
+from pathlib import Path
+
+# Ensure project root is in sys.path
+ROOT_DIR = Path(__file__).resolve().parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+import src
+src.reload_src_modules()
+
 import streamlit as st
 import pandas as pd
 

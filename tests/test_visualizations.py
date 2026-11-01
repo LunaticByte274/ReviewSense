@@ -181,3 +181,4 @@ def test_word_cloud_bubble_chart():
 
     fig_empty = create_word_cloud_bubble_chart([])
     assert isinstance(fig_empty, go.Figure)
+
